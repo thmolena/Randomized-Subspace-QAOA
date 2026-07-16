@@ -232,7 +232,9 @@ h2,
 h3,
 p {
   margin-top: 0;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
 }
 
 h1,
@@ -241,17 +243,22 @@ h3 {
   text-wrap: balance;
 }
 
+p {
+  text-wrap: pretty;
+}
+
 h1 {
-  max-width: 780px;
+  max-width: 100%;
   margin-bottom: 20px;
-  font-size: clamp(3.2rem, 7.2vw, 7.4rem);
+  font-size: clamp(2.1rem, 3vw, 2.4rem);
   font-weight: 790;
-  letter-spacing: -0.05em;
-  line-height: 0.94;
+  letter-spacing: -0.04em;
+  line-height: 1.06;
+  white-space: nowrap;
 }
 
 h1 span {
-  display: block;
+  display: inline;
   color: var(--lime);
 }
 
@@ -985,8 +992,7 @@ mjx-container[jax="SVG"][display="true"] {
   }
 
   h1 {
-    font-size: clamp(3.3rem, 16vw, 5.2rem);
-    overflow-wrap: anywhere;
+    font-size: clamp(1.5rem, 5.8vw, 2.6rem);
   }
 
   .scope-strip,
@@ -1064,16 +1070,11 @@ mjx-container[jax="SVG"][display="true"] {
   .nav-links {
     min-width: 0;
     justify-content: flex-end;
-    gap: 12px;
+    gap: 8px;
   }
 
   .nav-links a {
-    font-size: 0.72rem;
-  }
-
-  .nav-links a:nth-child(1),
-  .nav-links a:nth-child(4) {
-    display: none;
+    font-size: 0.64rem;
   }
 
   .hero {
@@ -1098,7 +1099,9 @@ mjx-container[jax="SVG"][display="true"] {
   .paper-title,
   .summary,
   .scope-strip dd {
-    overflow-wrap: anywhere;
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
   }
 
   .hero .eyebrow {
@@ -1108,9 +1111,9 @@ mjx-container[jax="SVG"][display="true"] {
 
   h1 {
     max-width: 100%;
-    font-size: clamp(2.55rem, 13vw, 3.4rem);
-    letter-spacing: -0.04em;
-    line-height: 0.98;
+    font-size: clamp(1.15rem, 5.8vw, 1.75rem);
+    letter-spacing: -0.035em;
+    line-height: 1.08;
   }
 
   .summary {
