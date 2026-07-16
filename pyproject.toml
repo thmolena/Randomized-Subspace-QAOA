@@ -37,7 +37,7 @@ Homepage = "https://thmolena.github.io/Randomized-Subspace-QAOA/"
 Repository = "https://github.com/thmolena/Randomized-Subspace-QAOA"
 Issues = "https://github.com/thmolena/Randomized-Subspace-QAOA/issues"
 Paper = "https://thmolena.github.io/Randomized-Subspace-QAOA/paper/main.pdf"
-"Source data" = "https://github.com/thmolena/Randomized-Subspace-QAOA/tree/main/code/results"
+"Source data" = "https://github.com/thmolena/Randomized-Subspace-QAOA/tree/main/experiments/results"
 
 [project.optional-dependencies]
 pennylane = ["pennylane>=0.35,<1", "pennylane-lightning>=0.35,<1"]
@@ -50,11 +50,10 @@ release = ["build>=1.2,<2", "twine>=5,<7"]
 [project.scripts]
 rsqaoa-experiment = "rsqaoa._cli:main"
 
-# Canonical sources live in code/src (see the code/ folder). This root config
-# mirrors code/pyproject.toml so the package installs from the repo root too.
 [tool.setuptools.packages.find]
-where = ["code/src"]
+where = ["."]
+include = ["rsqaoa*"]
 
 [tool.pytest.ini_options]
-testpaths = ["code/tests"]
+testpaths = ["tests"]
 addopts = "-q"

@@ -256,7 +256,7 @@
     "refresh_every": "25",
     "residual_probes": "12",
     "rsqaoa_version": "0.3.0",
-    "runner_sha256": "d156fac9e6823e0e88bad30e6d9f1f827053acbc20f2e76cfed143c9b17960a6",
+    "runner_sha256": "9bbcd6393914de2cbb14b2b805f4bc9f2a00f850180fc4b9b040a83491a0f731",
     "sketch_seed_offset": "200000",
     "spsa_eps": "0.0001",
     "steps": "100",
@@ -302,14 +302,14 @@
   "schema_version": 3,
   "scope": "descriptive CPU exact-statevector validation on n=8,10 and p=1,2; no hardware, noise, or asymptotic scaling claim",
   "source_csv": "maxcut_small.csv",
-  "source_csv_sha256": "9cb2ef4087ddbb2fa32d69d3e4547392b3296f0414bb260acb0ad5d73f5a19d1",
+  "source_csv_sha256": "3fc6bef1a65a76de6d1188b3731b4ee951a6fc043d7306d2a0e238fe82c3d475",
   "summarizer_environment": {
     "matplotlib_version": "3.10.8",
     "numpy_version": "2.4.3",
     "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
     "python_version": "3.13.12"
   },
-  "summarizer_sha256": "cb21d214b73e54a0b71a5d8fdc6212234de0561583d87c0f692a170109783aaa",
+  "summarizer_sha256": "b2d3e7bd67402f642a0e33991ea62f721e0a6afd048dbbd6b870bf4ba902bea4",
   "uncertainty_convention": {
     "compression": "mean of graph-depth cluster-mean fractions",
     "paired_change": "two standard errors across graph-depth cluster means; descriptive",

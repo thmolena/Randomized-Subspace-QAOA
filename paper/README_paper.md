@@ -12,21 +12,20 @@ The paper consumes four PDF figures in `figures/` and
 `tables/table1_summary.tex`. Regenerate those artifacts from the released CSV:
 
 ```bash
-cd ../code
+cd ..
 python -m pip install -e ".[dev]"
-python experiments/summarize_results.py
-python experiments/validate_release.py
+python run.py summarize
+python run.py validate
 ```
 
 Rerun the paired benchmark first when a numerical method changes:
 
 ```bash
-python experiments/run_experiment.py \
-  --config experiments/configs/maxcut_small.yaml
-python experiments/summarize_results.py
-python experiments/validate_release.py
+python run.py experiment --config experiments/configs/maxcut_small.yaml
+python run.py summarize
+python run.py validate
 ```
 
 Every reported result is backed by row-level evidence in
-`../code/results/maxcut_small.csv`; exact aggregates live in
-`../code/results/summary.json`.
+`experiments/results/maxcut_small.csv`; exact aggregates live in
+`experiments/results/summary.json`.

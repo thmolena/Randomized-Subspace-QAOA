@@ -757,16 +757,15 @@ could raise rank but improve high-depth fidelity.
 
 \section{Reproducibility}
 
-The canonical package is the repository's \texttt{code/} directory.  A clean
-environment can install and verify it with
+The canonical package is the root-level \texttt{rsqaoa/} directory.  A clean
+environment can install and verify it from the repository root with
 \begin{verbatim}
-python -m pip install -e 'code[dev]'
-python -m pytest code/tests -q
-cd code
-python experiments/run_experiment.py \
+python -m pip install -e '.[dev]'
+python -m pytest tests -q
+python run.py experiment \
   --config experiments/configs/maxcut_small.yaml
-python experiments/summarize_results.py
-python experiments/validate_release.py
+python run.py summarize
+python run.py validate
 \end{verbatim}
 The experiment runner writes 216 CSV rows and records separate graph,
 initialization and sketch seeds; canonical edge lists and graph hashes; complete

@@ -17,4 +17,4 @@ fd_eps: 0.0001
 spsa_eps: 0.0001
 af_rank: 8
 indicator: fro
-out: results/maxcut_small.csv
+out: experiments/results/maxcut_small.csv

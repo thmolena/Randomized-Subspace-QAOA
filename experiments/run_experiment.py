@@ -12,7 +12,7 @@ and PyTorch seeds. Figures in the manuscript are built from the CSV.
 
 Usage:
     python experiments/run_experiment.py --config experiments/configs/maxcut_small.yaml
-    python experiments/run_experiment.py --n 8 10 12 --p 1 2 --seeds 5 --out results/run.csv
+    python experiments/run_experiment.py --n 8 10 12 --p 1 2 --seeds 5 --out experiments/results/run.csv
 """
 
 from __future__ import annotations
@@ -74,7 +74,7 @@ def graph_fingerprint(n, edges):
 
 
 def source_tree_fingerprint():
-    root = Path(__file__).resolve().parents[1] / "src" / "rsqaoa"
+    root = Path(__file__).resolve().parents[1] / "rsqaoa"
     digest = hashlib.sha256()
     for path in sorted(root.glob("*.py")):
         digest.update(path.name.encode("utf-8"))
@@ -359,7 +359,7 @@ def main(argv=None):
     ap.add_argument("--sketch-seed-offset", type=int, default=200_000)
     ap.add_argument("--shard-index", type=int, default=0)
     ap.add_argument("--shard-count", type=int, default=1)
-    ap.add_argument("--out", type=str, default="results/run.csv")
+    ap.add_argument("--out", type=str, default="experiments/results/run.csv")
     args = ap.parse_args(argv)
 
     if args.config:

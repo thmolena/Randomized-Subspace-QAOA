@@ -2,7 +2,7 @@
 
 [![Package CI](https://github.com/thmolena/Randomized-Subspace-QAOA/actions/workflows/ci.yml/badge.svg)](https://github.com/thmolena/Randomized-Subspace-QAOA/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](code/pyproject.toml)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](pyproject.toml)
 
 Residual-controlled active-subspace optimization for multi-angle QAOA.
 
@@ -26,7 +26,7 @@ exceeds full-space optimization on these small simulators.
 
 - [Manuscript](paper/main.pdf) · [LaTeX source](paper/main.tex)
 - [Project page](https://thmolena.github.io/Randomized-Subspace-QAOA/)
-- [Installable package](code/) · [Released rows](code/results/maxcut_small.csv)
+- [Installable package](rsqaoa/) · [Released rows](experiments/results/maxcut_small.csv)
 
 ## Claims and verification paths
 
@@ -35,35 +35,33 @@ exceeds full-space optimization on these small simulators.
 | The scalar weighted-cut gradient lies in the observable Jacobian row space | Chain-rule proposition | `paper/main.tex`, Proposition 1; `test_dense_jacobian_consistency` | Local and observable-dependent |
 | A true residual controls discarded first-order change | Conditional Taylor bound | `paper/main.tex`, Theorem 1 | No global convergence or approximation-ratio guarantee |
 | Finite probes estimate the Frobenius residual ratio | Moment identity and Chebyshev envelope | `paper/main.tex`, Propositions 2--3; `residual_ratio_confidence` | Released 12-probe envelope is not run-wise informative at 95% confidence |
-| Depth-one compression has a small measured change | 18 paired runs aggregated into 14 topology clusters | [`summary.json`](code/results/summary.json); Fig. 1 | Not a formal equivalence trial |
-| Depth-two compression exposes a failure boundary | 18 paired runs aggregated into 14 topology clusters | [`summary.json`](code/results/summary.json); Figs. 1--2 | `n <= 10`, tested families and optimizer only |
-| The method is not query-advantaged in the released regime | Instrumented forward/JVP/VJP counts | Fig. 4 and [released rows](code/results/maxcut_small.csv) | Counters are separate, not additive shot costs |
+| Depth-one compression has a small measured change | 18 paired runs aggregated into 14 topology clusters | [`summary.json`](experiments/results/summary.json); Fig. 1 | Not a formal equivalence trial |
+| Depth-two compression exposes a failure boundary | 18 paired runs aggregated into 14 topology clusters | [`summary.json`](experiments/results/summary.json); Figs. 1--2 | `n <= 10`, tested families and optimizer only |
+| The method is not query-advantaged in the released regime | Instrumented forward/JVP/VJP counts | Fig. 4 and [released rows](experiments/results/maxcut_small.csv) | Counters are separate, not additive shot costs |
 
 ## Install
 
-From the repository root, either install the canonical package under `code/`
-or use the equivalent root package configuration:
+Install the canonical package from the repository root:
 
 ```bash
-python -m pip install ./code  # canonical
-# or: python -m pip install .
+python -m pip install .
 ```
 
 From the public Git repository, without keeping a checkout:
 
 ```bash
 python -m pip install \
-  "rsqaoa @ git+https://github.com/thmolena/Randomized-Subspace-QAOA.git#subdirectory=code"
+  "rsqaoa @ git+https://github.com/thmolena/Randomized-Subspace-QAOA.git"
 ```
 
 For a reproducible downstream environment, replace the default branch in that
 URL with a release tag or commit SHA. For development in a checkout:
 
 ```bash
-python -m pip install -e "./code[dev,release]"
-python -m pytest code/tests -q
-python -m build code
-python -m twine check code/dist/*
+python -m pip install -e ".[dev,release]"
+python -m pytest tests -q
+python -m build
+python -m twine check dist/*
 ```
 
 The distribution and import names are both `rsqaoa`. The repository does not
@@ -161,16 +159,14 @@ released rows, paper source, and figure destinations are intentionally not
 embedded in the installable wheel:
 
 ```bash
-python -m pip install -e "./code[dev]"
-cd code
-python experiments/run_experiment.py \
-  --config experiments/configs/maxcut_small.yaml
-python experiments/summarize_results.py
-python experiments/validate_release.py
+python -m pip install -e ".[dev]"
+python run.py experiment --config experiments/configs/maxcut_small.yaml
+python run.py summarize
+python run.py validate
 ```
 
 The exact environment used for the committed grid is recorded in every CSV row
-and in [`reproduction-environment.yml`](code/experiments/reproduction-environment.yml).
+and in [`reproduction-environment.yml`](experiments/reproduction-environment.yml).
 For execution environments with short process limits, run four deterministic
 shards with `--shard-count 4 --shard-index 0..3`, then combine them with
 `experiments/merge_shards.py`; the merger enforces full-grid completeness before
@@ -190,10 +186,11 @@ periodically rebuilt setting and do not demonstrate saved rebuilds.
 ## Repository map
 
 ```text
-code/src/rsqaoa/       canonical installable package
-code/tests/            numerical, validation, API, CLI, and backend tests
-code/experiments/      paired grid runner, summarizer, and provenance validator
-code/results/          released row-level data and aggregates
+rsqaoa/                canonical installable package
+tests/                 numerical, validation, API, CLI, and backend tests
+experiments/           paired grid runner, summarizer, and provenance validator
+experiments/results/   released row-level data and aggregates
+run.py                 unified demo, experiment, and validation dispatcher
 paper/main.tex         article source
 paper/main.pdf         compiled article
 paper/figures/         generated figures
@@ -202,9 +199,10 @@ index.html             static project page
 .github/workflows/     package CI and GitHub Pages deployment
 ```
 
-The canonical source tree is `code/src/rsqaoa`; there is no second package
-implementation to keep synchronized. Root installation is tested for parity,
-while future package-index artifacts should be built from canonical `code/`.
+The canonical source tree is the root-level `rsqaoa/` package; there is no
+second package implementation or nested build configuration to keep
+synchronized. Future package-index artifacts should be built from the
+repository root.
 
 ## Scope and extension points
 

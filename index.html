@@ -317,8 +317,8 @@
       <aside class="evidence-note" aria-label="Evidence provenance">
         <strong>Trace every value.</strong>
         <span>The cards below summarize the committed artifact. Audit the
-          <a href="code/results/maxcut_small.csv">row-level CSV</a>,
-          <a href="code/results/summary.json">machine-readable summary</a>, and
+          <a href="experiments/results/maxcut_small.csv">row-level CSV</a>,
+          <a href="experiments/results/summary.json">machine-readable summary</a>, and
           <a href="paper/main.pdf">paper protocol</a> together.</span>
       </aside>
 
@@ -427,8 +427,8 @@
         <p class="eyebrow">Install, inspect, extend</p>
         <h2 id="package-title">A reusable numerical core with an auditable research artifact</h2>
         <p>
-          The repository root and <code>code/</code> directory build the same
-          <code>rsqaoa</code> project. The installable distribution contains the
+          The repository root is the single installable source for the
+          <code>rsqaoa</code> project. The distribution contains the
           statevector simulator, backend-neutral sensitivity adapter, randomized
           factorization, optimizers, baselines, and console command. Experiment
           scripts, released results, paper sources, and generated figures remain
@@ -440,7 +440,7 @@
         <div class="install-card">
           <p class="card-tag">Install from Git now</p>
           <pre><code>python -m pip install \
-  "rsqaoa @ git+https://github.com/thmolena/Randomized-Subspace-QAOA.git#subdirectory=code"
+  "rsqaoa @ git+https://github.com/thmolena/Randomized-Subspace-QAOA.git"
 
 rsqaoa-experiment --family ring --n 4 --p 1 --steps 1 --json</code></pre>
           <p class="fine-print">
@@ -453,17 +453,16 @@ rsqaoa-experiment --family ring --n 4 --p 1 --steps 1 --json</code></pre>
           <p class="card-tag">Repository-only reproduction</p>
           <pre><code>git clone https://github.com/thmolena/Randomized-Subspace-QAOA.git
 cd Randomized-Subspace-QAOA
-python -m pip install -e "./code[dev]"
-python -m pytest code/tests -q
-cd code
-python experiments/run_experiment.py --config experiments/configs/maxcut_small.yaml
-python experiments/summarize_results.py
-python experiments/validate_release.py</code></pre>
+python -m pip install -e ".[dev]"
+python -m pytest tests -q
+python run.py experiment --config experiments/configs/maxcut_small.yaml
+python run.py summarize
+python run.py validate</code></pre>
           <div class="artifact-links">
-            <a href="https://github.com/thmolena/Randomized-Subspace-QAOA/tree/main/code/src/rsqaoa" target="_blank" rel="noopener noreferrer">Package source</a>
-            <a href="code/results/maxcut_small.csv">Released rows</a>
-            <a href="code/results/summary.json">Result summary</a>
-            <a href="CITATION.cff">Citation metadata</a>
+            <a href="https://github.com/thmolena/Randomized-Subspace-QAOA/tree/main/rsqaoa" target="_blank" rel="noopener noreferrer">Package source</a>
+            <a href="experiments/results/maxcut_small.csv">Released rows</a>
+            <a href="experiments/results/summary.json">Result summary</a>
+            <a href="#bibtex">BibTeX citation</a>
           </div>
         </div>
       </div>
@@ -494,7 +493,7 @@ python experiments/validate_release.py</code></pre>
     <div>
       <a href="https://github.com/thmolena/Randomized-Subspace-QAOA" target="_blank" rel="noopener noreferrer">GitHub</a>
       <a href="paper/main.pdf">Paper</a>
-      <a href="CITATION.cff">CITATION.cff</a>
+      <a href="#bibtex">BibTeX</a>
       <a href="https://github.com/thmolena/Randomized-Subspace-QAOA/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT license</a>
     </div>
   </footer>

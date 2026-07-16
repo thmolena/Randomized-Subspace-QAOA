@@ -20,8 +20,7 @@ from summarize_results import sha256, validate_rows
 
 
 HERE = Path(__file__).resolve().parent
-CODE_ROOT = HERE.parent
-REPOSITORY = CODE_ROOT.parent
+REPOSITORY = HERE.parent
 
 
 def _require(text: str, phrase: str, context: str) -> None:
@@ -204,8 +203,12 @@ def validate_release(csv_path: Path, summary_path: Path, paper_path: Path) -> di
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--csv", default=str(CODE_ROOT / "results/maxcut_small.csv"))
-    parser.add_argument("--summary", default=str(CODE_ROOT / "results/summary.json"))
+    parser.add_argument(
+        "--csv", default=str(HERE / "results/maxcut_small.csv")
+    )
+    parser.add_argument(
+        "--summary", default=str(HERE / "results/summary.json")
+    )
     parser.add_argument("--paper", default=str(REPOSITORY / "paper"))
     args = parser.parse_args()
     report = validate_release(

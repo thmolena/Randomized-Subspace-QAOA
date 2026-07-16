@@ -584,8 +584,8 @@ def write_outputs(rows, table_path, summary_path, source_path, paper_path):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--csv", default="results/maxcut_small.csv")
-    parser.add_argument("--paper", default="../paper")
+    parser.add_argument("--csv", default="experiments/results/maxcut_small.csv")
+    parser.add_argument("--paper", default="paper")
     args = parser.parse_args()
     source_path = Path(args.csv)
     with open(source_path, newline="") as handle:

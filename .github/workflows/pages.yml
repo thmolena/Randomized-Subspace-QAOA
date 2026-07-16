@@ -25,17 +25,17 @@ jobs:
       - uses: actions/checkout@v4
       - name: Assemble curated site artifact
         run: |
-          mkdir -p _site/paper/figures _site/code/results
-          cp index.html style.css script.js favicon.svg CITATION.cff _site/
+          mkdir -p _site/paper/figures _site/experiments/results
+          cp index.html style.css script.js favicon.svg _site/
           cp paper/main.pdf _site/paper/
           cp paper/figures/figure1_tradeoff.png _site/paper/figures/
           cp paper/figures/figure2_family.png _site/paper/figures/
           cp paper/figures/figure3_operator_budget.png _site/paper/figures/
           cp paper/figures/figure4_rank.png _site/paper/figures/
-          cp code/results/maxcut_small.csv code/results/summary.json _site/code/results/
+          cp experiments/results/maxcut_small.csv experiments/results/summary.json _site/experiments/results/
           test -s _site/index.html
           test -s _site/paper/main.pdf
-          test -s _site/code/results/summary.json
+          test -s _site/experiments/results/summary.json
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
