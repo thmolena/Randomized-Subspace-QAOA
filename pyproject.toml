@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rsqaoa"
+version = "0.1.0"
+description = "Randomized Subspace QAOA: adaptive matrix-free, adjoint-free low-rank subspace optimization for multi-angle QAOA."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Molena Huynh" }]
+dependencies = ["numpy>=1.23", "torch>=2.0", "networkx>=2.8"]
+
+[project.urls]
+Homepage = "https://github.com/thmolena/Randomized-Subspace-QAOA"
+Repository = "https://github.com/thmolena/Randomized-Subspace-QAOA"
+
+[project.optional-dependencies]
+pennylane = ["pennylane>=0.35", "pennylane-lightning>=0.35"]
+experiments = ["lightning>=2.2", "pandas>=1.5", "pyyaml>=6.0", "matplotlib>=3.6"]
+dev = ["pytest>=7.0", "pytest-cov>=4.0"]
+
+[project.scripts]
+rsqaoa-experiment = "rsqaoa._cli:main"
+
+# Canonical sources live in code/src (see the code/ folder). This root config
+# mirrors code/pyproject.toml so the package installs from the repo root too.
+[tool.setuptools.packages.find]
+where = ["code/src"]
+
+[tool.pytest.ini_options]
+testpaths = ["code/tests"]
+addopts = "-q"

@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Experiment outputs
+results/
+lightning_logs/
+*.csv
+*.ckpt
+*.png
+!paper/figures/*.png
+
+# The released benchmark and its machine-readable summary are evidence for
+# the manuscript and must ship with the repository.
+!results/
+!results/maxcut_small.csv
+!results/summary.json
+
+# LaTeX build
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.bbl
+paper/*.blg
+paper/*.synctex.gz
+paper/*.pdf
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,8 @@
+# Released CPU validation grid used by the manuscript figures and table.
+families: [regular, er, ring]
+n: [8, 10]
+p: [1, 2]
+tols: [0.1, 0.01]
+seeds: 3
+steps: 100
+out: results/maxcut_small.csv

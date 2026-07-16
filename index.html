@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Randomized Subspace QAOA: Certified Active-Subspace Optimization for Multi-Angle QAOA</title>
+  <meta name="description" content="Project page for Randomized Subspace QAOA: certified active-subspace optimization for multi-angle QAOA." />
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']]
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <header class="hero">
+    <section class="hero-content fade-in">
+      <h2>Randomized Subspace QAOA: Certified Active-Subspace Optimization for Multi-Angle QAOA</h2>
+      <p class="authors">Molena Huynh</p>
+      <p class="venue">Preprint · 2026</p>
+      <p class="summary">
+        Randomized Subspace QAOA turns the local observable sensitivity of
+        multi-angle QAOA into a smaller optimization space. Matrix-free operator
+        actions build the space, a randomized residual estimate tests whether it
+        remains adequate, and recycled refreshes let the basis rotate as the
+        optimizer moves. Released experiments show substantial parameter
+        compression at depth one with a small paired quality change, and they
+        expose both the quality loss and setup cost that appear at depth two.
+      </p>
+      <div class="button-row">
+        <a class="button primary" href="paper/main.pdf">Paper</a>
+        <a class="button" href="https://github.com/thmolena/Randomized-Subspace-QAOA" target="_blank" rel="noreferrer">Code</a>
+        <a class="button" href="#bibtex">BibTeX</a>
+      </div>
+    </section>
+  </header>
+
+  <main>
+    <section class="section teaser fade-in">
+      <div class="teaser-panel">
+        <div class="teaser-copy">
+          <h2>Multi-Angle QAOA as a Growing Search Space</h2>
+          <p>
+            Standard depth-\(p\) QAOA shares two angles per layer. Multi-angle
+            QAOA assigns one phase parameter to each cost term and one mixer
+            parameter to each qubit, so the search dimension grows as
+            \[
+              d=p\bigl(|E|+|V|\bigr).
+            \]
+            The additional coordinates help only when they produce independent
+            changes in measurable observables.
+          </p>
+        </div>
+        <div class="text-block">
+          <p>
+            For the per-edge expectation vector \(F(\theta)\), its Jacobian
+            \(J(\theta)=\partial F/\partial\theta\) maps parameter perturbations
+            to observable changes. For any edge-weight vector \(w\),
+            \[
+              \nabla C(\theta)=J(\theta)^{\mathsf T}w,
+            \]
+            so the local objective gradient lies in the row space of \(J\).
+            Because \(\operatorname{rank}(J)\leq\min(|E|,d)\), observable space
+            supplies an algebraic compression ceiling even as depth enlarges the
+            ambient parameter space.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section fade-in">
+      <div class="section-heading">
+        <h2>Adaptive, Certificate-Gated Optimization</h2>
+      </div>
+      <div class="text-block">
+        <p>
+          RSQ never forms the full Jacobian. It uses Jacobian-vector and
+          vector-Jacobian products to approximate \(A=J^{\mathsf T}\) by
+          \(QB\), adding orthonormal blocks until a randomized residual estimate
+          meets a requested tolerance. Optimization then proceeds through
+          \(\theta=\theta_0+Qz\), with \(z\) carrying only the retained active
+          coordinates.
+        </p>
+        <p>
+          The row space is local and can rotate during optimization. RSQ therefore
+          rechecks the residual every 25 steps. A failed check triggers a recycled
+          update that augments the old basis with current residual directions and
+          recompresses the combined space. If the true residual obeys
+          \(\|J(I-QQ^{\mathsf T})\|_2\leq\varepsilon\), then the first-order
+          objective change discarded by a step \(\Delta\) is bounded by
+          \[
+            \bigl|C(\theta+\Delta)-C(\theta+QQ^{\mathsf T}\Delta)\bigr|
+            \leq \|w\|\,\varepsilon\,\|\Delta\|+O(\|\Delta\|^2).
+          \]
+          The certificate controls local first-order sensitivity; it is not a
+          global optimality certificate.
+        </p>
+      </div>
+    </section>
+
+    <section class="section fade-in">
+      <div class="section-heading">
+        <h2>Forward-Only Operation</h2>
+      </div>
+      <div class="text-block">
+        <p>
+          A separate forward-only path removes every vector-Jacobian product,
+          including those used during refresh. Central finite differences supply
+          directional actions,
+          \[
+            Jv=\frac{F(\theta_0+hv)-F(\theta_0-hv)}{2h}+O(h^2),
+          \]
+          while Gaussian probes estimate the average discarded sensitivity. A
+          regression test enforces zero reverse products throughout this path.
+          The released results show that forward-only operation is feasible but
+          more compressed and less accurate than two-sided RSQ on this benchmark.
+        </p>
+      </div>
+    </section>
+
+    <section class="section fade-in" id="results">
+      <div class="section-heading">
+        <h2>Benchmarking Randomized Subspace QAOA</h2>
+        <p>
+          The released CPU study contains 36 paired MaxCut instances across three
+          graph families, \(n\in\{8,10\}\), depths \(p\in\{1,2\}\), and three
+          seeds. Methods share initial angles, optimizer, and step budget on each
+          instance; operator costs are counted rather than inferred from dimension.
+        </p>
+      </div>
+
+      <div class="result-stack">
+        <article class="result-block">
+          <div class="result-copy">
+            <h3>Depth-One Compression</h3>
+            <p>
+              Full multi-angle QAOA optimizes 22.4 parameters on average and
+              attains approximation ratio \(0.851\pm0.053\). Two-sided RSQ at
+              tolerance \(10^{-2}\) optimizes 13.4 parameters, a 41.5% mean
+              per-instance reduction, and attains \(0.849\pm0.053\). The paired
+              change is \(-0.21\pm0.89\) percentage points, reported as mean
+              plus or minus two standard errors.
+            </p>
+          </div>
+          <figure class="result-figure">
+            <img src="paper/figures/figure1_tradeoff.png" alt="Compression and approximation-ratio frontier for randomized subspace QAOA" />
+            <figcaption>Optimized-parameter reduction versus paired approximation-ratio change across depths and subspace methods.</figcaption>
+          </figure>
+        </article>
+
+        <article class="result-block">
+          <div class="result-copy">
+            <h3>Depth-Two Failure Boundary</h3>
+            <p>
+              At depth two, the average ambient dimension grows to 44.9 while RSQ
+              retains 13.4 directions, a 70.8% reduction. The paired quality
+              change becomes \(-2.86\pm1.43\) percentage points. The loss occurs
+              across the tested families and rules out a blanket claim that the
+              smallest observable space preserves quality at larger depth.
+            </p>
+          </div>
+          <figure class="result-figure">
+            <img src="paper/figures/figure2_family.png" alt="Family-resolved paired quality change for randomized subspace QAOA" />
+            <figcaption>Family-resolved paired quality changes with uncertainty shown as two standard errors.</figcaption>
+          </figure>
+        </article>
+
+        <article class="result-block">
+          <div class="result-copy">
+            <h3>Measured Operator Cost</h3>
+            <p>
+              Instrumented counters separate forward evaluations, Jacobian-vector
+              products, and vector-Jacobian products. On these small exact
+              simulators, subspace construction and refresh require more operator
+              applications than direct full-space optimization. The supported
+              result is controlled parameter compression, not a quantum-query
+              advantage.
+            </p>
+          </div>
+          <figure class="result-figure">
+            <img src="paper/figures/figure3_operator_budget.png" alt="Instrumented operator counts for full-space and randomized-subspace methods" />
+            <figcaption>Mean instrumented operator counts; categories are separate and are not additive.</figcaption>
+          </figure>
+        </article>
+
+        <article class="result-block">
+          <div class="result-copy">
+            <h3>Certified Active Dimension</h3>
+            <p>
+              Tightening the tested tolerance from \(10^{-1}\) to \(10^{-2}\)
+              changes neither mean rank nor quality materially: RSQ retains 13.4
+              directions on average, approximately the observable count. The
+              certificate identifies the algebraic ceiling rather than additional
+              singular-value decay, while the ambient parameter count doubles
+              with depth.
+            </p>
+          </div>
+          <figure class="result-figure">
+            <img src="paper/figures/figure4_rank.png" alt="Ambient multi-angle QAOA dimension and certified active rank" />
+            <figcaption>Ambient parameter dimension and certified RSQ rank across graph sizes and depths.</figcaption>
+          </figure>
+        </article>
+      </div>
+    </section>
+
+    <section class="section fade-in">
+      <div class="section-heading">
+        <h2>Reproducible Research Package</h2>
+        <p>
+          The repository root and the <code>code/</code> directory install the
+          same <code>rsqaoa</code> package. The release contains the statevector
+          simulator, sensitivity operator, randomized factorization, optimizers,
+          baselines, experiment grid, committed row-level results, and tests.
+        </p>
+      </div>
+      <div class="bibtex-box install-box">
+        <pre><code>python -m pip install "rsqaoa @ git+https://github.com/thmolena/Randomized-Subspace-QAOA.git#subdirectory=code"
+rsqaoa-experiment --n 10 --p 2 --family regular --tol 0.01
+python -m pytest code/tests -q</code></pre>
+      </div>
+    </section>
+
+    <section class="section fade-in" id="bibtex">
+      <div class="section-heading">
+        <p class="eyebrow">Citation</p>
+        <h2>BibTeX</h2>
+      </div>
+      <div class="bibtex-box">
+        <button class="copy-button" id="copyBibtex">Copy</button>
+        <pre><code id="bibtexCode">@article{huynh2026rsqaoa,
+  title   = {Randomized Subspace QAOA: Certified Active-Subspace
+             Optimization for Multi-Angle QAOA},
+  author  = {Huynh, Molena},
+  journal = {arXiv preprint},
+  year    = {2026}
+}</code></pre>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Randomized Subspace QAOA · <a href="https://github.com/thmolena/Randomized-Subspace-QAOA">GitHub</a></p>
+  </footer>
+  <script src="script.js"></script>
+</body>
+</html>

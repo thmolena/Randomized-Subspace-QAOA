@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this software or the accompanying manuscript, please cite it."
+title: "Randomized Subspace QAOA"
+authors:
+  - family-names: "Huynh"
+    given-names: "Molena"
+    affiliation: "North Carolina State University"
+version: 0.1.0
+date-released: "2026-07-14"
+license: MIT
+repository-code: "https://github.com/thmolena/Randomized-Subspace-QAOA"
+preferred-citation:
+  type: article
+  title: "Randomized Subspace QAOA: Certified Active-Subspace Optimization for Multi-Angle QAOA"
+  authors:
+    - family-names: "Huynh"
+      given-names: "Molena"
+  year: 2026
