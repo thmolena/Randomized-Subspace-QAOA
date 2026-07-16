@@ -131,10 +131,51 @@ class MaxCutProblem:
     device: str = "cpu"
 
     def __post_init__(self):
-        self.edges = [tuple(int(v) for v in e) for e in self.edges]
+        if int(self.n) != self.n or self.n < 2:
+            raise ValueError("n must be an integer of at least 2")
+        if int(self.p) != self.p or self.p < 1:
+            raise ValueError("p must be a positive integer")
+        self.n = int(self.n)
+        self.p = int(self.p)
+        requested_device = torch.device(self.device)
+        if requested_device.type != "cpu":
+            raise ValueError(
+                "the bundled exact-statevector backend is CPU-only; use "
+                "MatrixFreeSensitivity to connect an external accelerator or device"
+            )
+        self.device = str(requested_device)
+
+        normalized = []
+        seen = set()
+        for edge in self.edges:
+            if len(edge) != 2:
+                raise ValueError("every edge must contain exactly two endpoints")
+            i, j = (int(v) for v in edge)
+            if not 0 <= i < self.n or not 0 <= j < self.n:
+                raise ValueError(f"edge {(i, j)} has an endpoint outside [0, n)")
+            if i == j:
+                raise ValueError("self-loops are not valid MaxCut terms")
+            canonical = tuple(sorted((i, j)))
+            if canonical in seen:
+                raise ValueError(f"duplicate undirected edge {canonical}")
+            seen.add(canonical)
+            normalized.append(canonical)
+        if not normalized:
+            raise ValueError("at least one edge is required")
+        self.edges = normalized
         self.C = cut_table(self.n, self.edges, device=self.device)
-        if self.weights is not None and not torch.is_tensor(self.weights):
-            self.weights = torch.tensor(self.weights, dtype=RDTYPE, device=self.device)
+
+        if self.weights is not None:
+            weights = torch.as_tensor(
+                self.weights, dtype=RDTYPE, device=self.C.device
+            ).detach().clone()
+            if weights.ndim != 1 or weights.numel() != len(self.edges):
+                raise ValueError(
+                    f"weights must have shape ({len(self.edges)},)"
+                )
+            if not torch.isfinite(weights).all():
+                raise ValueError("weights must contain only finite values")
+            self.weights = weights
 
     @property
     def dim(self) -> int:
@@ -152,4 +193,8 @@ class MaxCutProblem:
 
     def random_theta(self, generator: Optional[torch.Generator] = None,
                      scale: float = np.pi) -> torch.Tensor:
-        return scale * torch.rand(self.dim, dtype=RDTYPE, generator=generator)
+        if not np.isfinite(scale) or scale <= 0:
+            raise ValueError("scale must be a positive finite number")
+        return scale * torch.rand(
+            self.dim, dtype=RDTYPE, device=self.C.device, generator=generator
+        )

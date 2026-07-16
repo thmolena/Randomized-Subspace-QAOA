@@ -13,7 +13,9 @@ The paper consumes four PDF figures in `figures/` and
 
 ```bash
 cd ../code
+python -m pip install -e ".[dev]"
 python experiments/summarize_results.py
+python experiments/validate_release.py
 ```
 
 Rerun the paired benchmark first when a numerical method changes:
@@ -22,6 +24,7 @@ Rerun the paired benchmark first when a numerical method changes:
 python experiments/run_experiment.py \
   --config experiments/configs/maxcut_small.yaml
 python experiments/summarize_results.py
+python experiments/validate_release.py
 ```
 
 Every reported result is backed by row-level evidence in

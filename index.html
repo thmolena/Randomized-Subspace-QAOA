@@ -3,8 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Randomized Subspace QAOA: Certified Active-Subspace Optimization for Multi-Angle QAOA</title>
-  <meta name="description" content="Project page for Randomized Subspace QAOA: certified active-subspace optimization for multi-angle QAOA." />
+  <title>Randomized Subspace QAOA | Residual-Controlled Active-Subspace Optimization</title>
+  <meta name="description" content="Randomized Subspace QAOA is a matrix-free, residual-gated method for compressing multi-angle QAOA optimization into an adaptive active subspace." />
+  <meta name="theme-color" content="#0b2524" />
+  <meta name="color-scheme" content="light" />
+  <meta name="robots" content="index,follow,max-image-preview:large" />
+  <link rel="canonical" href="https://thmolena.github.io/Randomized-Subspace-QAOA/" />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="Randomized Subspace QAOA" />
+  <meta property="og:url" content="https://thmolena.github.io/Randomized-Subspace-QAOA/" />
+  <meta property="og:title" content="Randomized Subspace QAOA" />
+  <meta property="og:description" content="Residual-controlled, matrix-free active-subspace optimization for multi-angle QAOA, with released source data and explicit claim boundaries." />
+  <meta property="og:image" content="https://thmolena.github.io/Randomized-Subspace-QAOA/paper/figures/figure1_tradeoff.png" />
+  <meta property="og:image:alt" content="Compression and approximation-ratio evidence for Randomized Subspace QAOA" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Randomized Subspace QAOA" />
+  <meta name="twitter:description" content="Residual-controlled, matrix-free active-subspace optimization for multi-angle QAOA." />
+  <meta name="twitter:image" content="https://thmolena.github.io/Randomized-Subspace-QAOA/paper/figures/figure1_tradeoff.png" />
+  <meta name="twitter:image:alt" content="Compression and approximation-ratio evidence for Randomized Subspace QAOA" />
+
+  <meta name="citation_title" content="Randomized Subspace QAOA: Residual-Controlled Active-Subspace Optimization for Multi-Angle QAOA" />
+  <meta name="citation_author" content="Huynh, Molena" />
+  <meta name="citation_publication_date" content="2026-07-15" />
+  <meta name="citation_pdf_url" content="https://thmolena.github.io/Randomized-Subspace-QAOA/paper/main.pdf" />
+
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="style.css?v=20260716" />
   <script>
     window.MathJax = {
       tex: {
@@ -14,38 +40,105 @@
       svg: { fontCache: 'global' }
     };
   </script>
-  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
-  <link rel="stylesheet" href="style.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "ScholarlyArticle",
+    "headline": "Randomized Subspace QAOA: Residual-Controlled Active-Subspace Optimization for Multi-Angle QAOA",
+    "author": {"@type": "Person", "name": "Molena Huynh"},
+    "datePublished": "2026-07-15",
+    "url": "https://thmolena.github.io/Randomized-Subspace-QAOA/",
+    "encoding": {
+      "@type": "MediaObject",
+      "contentUrl": "https://thmolena.github.io/Randomized-Subspace-QAOA/paper/main.pdf",
+      "encodingFormat": "application/pdf"
+    },
+    "codeRepository": "https://github.com/thmolena/Randomized-Subspace-QAOA"
+  }
+  </script>
 </head>
 
-<body>
-  <header class="hero">
-    <section class="hero-content fade-in">
-      <h2>Randomized Subspace QAOA: Certified Active-Subspace Optimization for Multi-Angle QAOA</h2>
-      <p class="authors">Molena Huynh</p>
-      <p class="venue">Preprint · 2026</p>
-      <p class="summary">
-        Randomized Subspace QAOA turns the local observable sensitivity of
-        multi-angle QAOA into a smaller optimization space. Matrix-free operator
-        actions build the space, a randomized residual estimate tests whether it
-        remains adequate, and recycled refreshes let the basis rotate as the
-        optimizer moves. Released experiments show substantial parameter
-        compression at depth one with a small paired quality change, and they
-        expose both the quality loss and setup cost that appear at depth two.
-      </p>
-      <div class="button-row">
-        <a class="button primary" href="paper/main.pdf">Paper</a>
-        <a class="button" href="https://github.com/thmolena/Randomized-Subspace-QAOA" target="_blank" rel="noreferrer">Code</a>
-        <a class="button" href="#bibtex">BibTeX</a>
+<body id="top">
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <header class="site-header">
+    <nav class="site-nav" aria-label="Primary navigation">
+      <a class="brand" href="#top" aria-label="Randomized Subspace QAOA home">
+        <span class="brand-mark" aria-hidden="true">R/S</span>
+        <span>Randomized Subspace QAOA</span>
+      </a>
+      <div class="nav-links">
+        <a href="#method">Method</a>
+        <a href="#results">Evidence</a>
+        <a href="#package">Package</a>
+        <a href="#bibtex">Cite</a>
       </div>
-    </section>
+    </nav>
   </header>
 
-  <main>
-    <section class="section teaser fade-in">
-      <div class="teaser-panel">
-        <div class="teaser-copy">
-          <h2>Multi-Angle QAOA as a Growing Search Space</h2>
+  <main id="main-content" tabindex="-1">
+    <section class="hero section-shell fade-in" aria-labelledby="page-title">
+      <div class="hero-copy">
+        <p class="eyebrow">Matrix-free · residual-gated · reproducible</p>
+        <h1 id="page-title">Randomized Subspace <span>QAOA</span></h1>
+        <p class="paper-title">Residual-Controlled Active-Subspace Optimization for Multi-Angle QAOA</p>
+        <p class="authors">Molena Huynh</p>
+        <p class="venue">Preprint · 2026</p>
+        <p class="summary">
+          Randomized Subspace QAOA turns the local observable sensitivity of
+          multi-angle QAOA into a smaller optimization space. Matrix-free operator
+          actions build the space, a randomized residual estimate tests whether it
+          remains adequate, and recycled refreshes let the basis rotate as the
+          optimizer moves. Released experiments show substantial parameter
+          compression at depth one with a small paired quality change, and they
+          expose both the quality loss and setup cost that appear at depth two.
+        </p>
+        <div class="button-row">
+          <a class="button primary" href="paper/main.pdf">Read the paper</a>
+          <a class="button" href="https://github.com/thmolena/Randomized-Subspace-QAOA" target="_blank" rel="noopener noreferrer">Browse code</a>
+          <a class="button" href="#results">Inspect evidence</a>
+        </div>
+        <dl class="scope-strip" aria-label="Evidence scope">
+          <div>
+            <dt>Evidence</dt>
+            <dd>Exact-statevector CPU study</dd>
+          </div>
+          <div>
+            <dt>Supported claim</dt>
+            <dd>Parameter compression</dd>
+          </div>
+          <div>
+            <dt>Not claimed</dt>
+            <dd>Hardware or quantum-query advantage</dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="hero-visual">
+        <div class="equation-card" aria-label="Matrix-free low-rank factorization">
+          <span class="equation-label">LOCAL SENSITIVITY MAP</span>
+          <div class="equation">\(J(\theta)^{\mathsf T}\approx QB\)</div>
+          <p>Probe the operator. Retain active directions. Recheck as the iterate moves.</p>
+        </div>
+        <figure class="hero-figure">
+          <img src="paper/figures/figure4_rank.png"
+               width="1398" height="895"
+               alt="Ambient multi-angle QAOA dimension and residual-controlled active rank"
+               decoding="async" fetchpriority="high" />
+          <figcaption>Ambient parameter dimension and the active rank selected by the released residual-controlled procedure.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section section-shell fade-in" id="problem" aria-labelledby="problem-title">
+      <div class="section-index" aria-hidden="true">01 / Problem</div>
+      <div class="section-heading">
+        <p class="eyebrow">Why compress?</p>
+        <h2 id="problem-title">Multi-angle QAOA creates a growing search space</h2>
+      </div>
+      <div class="split-panel">
+        <div>
           <p>
             Standard depth-\(p\) QAOA shares two angles per layer. Multi-angle
             QAOA assigns one phase parameter to each cost term and one mixer
@@ -57,7 +150,7 @@
             changes in measurable observables.
           </p>
         </div>
-        <div class="text-block">
+        <div>
           <p>
             For the per-edge expectation vector \(F(\theta)\), its Jacobian
             \(J(\theta)=\partial F/\partial\theta\) maps parameter perturbations
@@ -74,179 +167,338 @@
       </div>
     </section>
 
-    <section class="section fade-in">
+    <section class="section section-shell fade-in" id="dimension" aria-labelledby="dimension-title">
+      <div class="section-index" aria-hidden="true">02 / Dimension lab</div>
       <div class="section-heading">
-        <h2>Adaptive, Certificate-Gated Optimization</h2>
+        <p class="eyebrow">Interactive algebraic explainer</p>
+        <h2 id="dimension-title">Depth grows the ambient space, not the observable ceiling</h2>
+        <p>
+          For a 10-node, 15-edge 3-regular graph, vary circuit depth and retained
+          rank. This is an algebraic dimension comparison, not a speedup estimate:
+          constructing the basis also consumes operator evaluations.
+        </p>
       </div>
-      <div class="text-block">
+      <div class="dimension-lab">
+        <div class="lab-controls">
+          <label for="depthControl">Depth <output id="depthValue" for="depthControl">2</output></label>
+          <input id="depthControl" type="range" min="1" max="8" value="2" />
+          <label for="rankControl">Retained rank <output id="rankValue" for="rankControl">15</output></label>
+          <input id="rankControl" type="range" min="1" max="15" value="15" />
+        </div>
+        <div class="lab-metrics" aria-live="polite">
+          <div><span>Ambient parameters</span><strong id="ambientValue">50</strong></div>
+          <div><span>Observable ceiling</span><strong>15</strong></div>
+          <div><span>Coordinate reduction</span><strong id="reductionValue">70.0%</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-shell fade-in" id="method" aria-labelledby="method-title">
+      <div class="section-index" aria-hidden="true">03 / Method</div>
+      <div class="section-heading">
+        <p class="eyebrow">Adaptive active subspaces</p>
+        <h2 id="method-title">Build, optimize, and refresh without forming the Jacobian</h2>
         <p>
           RSQ never forms the full Jacobian. It uses Jacobian-vector and
           vector-Jacobian products to approximate \(A=J^{\mathsf T}\) by
           \(QB\), adding orthonormal blocks until a randomized residual estimate
-          meets a requested tolerance. Optimization then proceeds through
+          meets a requested tolerance or the algebraic rank ceiling is reached.
+          The stopping status is recorded. Optimization then proceeds through
           \(\theta=\theta_0+Qz\), with \(z\) carrying only the retained active
           coordinates.
         </p>
+      </div>
+
+      <ol class="method-grid">
+        <li>
+          <span class="step-number">01</span>
+          <h3>Probe</h3>
+          <p>Apply matrix-free sensitivity actions to discover observable directions without materializing \(J\).</p>
+        </li>
+        <li>
+          <span class="step-number">02</span>
+          <h3>Compress</h3>
+          <p>Factor the local map into an orthonormal parameter basis \(Q\) and optimize only its coordinates.</p>
+        </li>
+        <li>
+          <span class="step-number">03</span>
+          <h3>Refresh</h3>
+          <p>Recheck the residual, recycle useful directions, and recompress when the local row space drifts.</p>
+        </li>
+      </ol>
+
+      <div class="theorem-panel">
+        <div>
+          <p class="eyebrow">Conditional local statement</p>
+          <h3>What the true residual controls</h3>
+        </div>
         <p>
           The row space is local and can rotate during optimization. RSQ therefore
           rechecks the residual every 25 steps. A failed check triggers a recycled
           update that augments the old basis with current residual directions and
           recompresses the combined space. If the true residual obeys
-          \(\|J(I-QQ^{\mathsf T})\|_2\leq\varepsilon\), then the first-order
-          objective change discarded by a step \(\Delta\) is bounded by
+          \(\|J(I-QQ^{\mathsf T})\|_2\leq\varepsilon\), then
           \[
             \bigl|C(\theta+\Delta)-C(\theta+QQ^{\mathsf T}\Delta)\bigr|
-            \leq \|w\|\,\varepsilon\,\|\Delta\|+O(\|\Delta\|^2).
+            \leq \|w\|\,\varepsilon\,\|\Delta\|+L_C\|\Delta\|^2.
           \]
-          The certificate controls local first-order sensitivity; it is not a
-          global optimality certificate.
+          The true residual controls local first-order sensitivity; its finite-probe
+          estimate is a refresh diagnostic, not a global optimality certificate.
+          The public result records every residual check and refresh, the rank
+          trajectory, final and best-observed iterates, and separated operator counts.
         </p>
       </div>
     </section>
 
-    <section class="section fade-in">
+    <section class="section section-shell fade-in" id="boundaries" aria-labelledby="boundaries-title">
+      <div class="section-index" aria-hidden="true">04 / Boundaries</div>
       <div class="section-heading">
-        <h2>Forward-Only Operation</h2>
+        <p class="eyebrow">What the interfaces and probes establish</p>
+        <h2 id="boundaries-title">Forward-only access and an explicit confidence boundary</h2>
       </div>
-      <div class="text-block">
-        <p>
-          A separate forward-only path removes every vector-Jacobian product,
-          including those used during refresh. Central finite differences supply
-          directional actions,
-          \[
-            Jv=\frac{F(\theta_0+hv)-F(\theta_0-hv)}{2h}+O(h^2),
-          \]
-          while Gaussian probes estimate the average discarded sensitivity. A
-          regression test enforces zero reverse products throughout this path.
-          The released results show that forward-only operation is feasible but
-          more compressed and less accurate than two-sided RSQ on this benchmark.
-        </p>
+
+      <div class="boundary-grid">
+        <article>
+          <p class="card-tag">Forward-only path</p>
+          <h3>No vector-Jacobian products</h3>
+          <p>
+            A distinct fixed-rank path removes every vector-Jacobian product,
+            including those used during refresh. Central finite differences supply
+            directional actions,
+            \[
+              Jv=\frac{F(\theta_0+hv)-F(\theta_0-hv)}{2h}+O(h^2),
+            \]
+            Gaussian probes estimate average discarded sensitivity, and a
+            two-evaluation simultaneous-perturbation estimate updates the reduced
+            objective. A regression test enforces zero reverse products throughout
+            basis construction, refresh, and optimization. The released results
+            establish feasibility, not parity with two-sided RSQ.
+          </p>
+        </article>
+
+        <article>
+          <p class="card-tag">Finite-probe envelope</p>
+          <h3>A diagnostic, not a global certificate</h3>
+          <p>
+            For \(s\) Gaussian probes and failure probability \(\delta\), let
+            \(t=2/\sqrt{s\delta}\). When \(t&lt;1\), the true Frobenius residual
+            ratio lies between
+            \[
+              \sqrt{\frac{1-t}{1+t}}\,\widehat\rho_F
+              \quad\text{and}\quad
+              \sqrt{\frac{1+t}{1-t}}\,\widehat\rho_F
+            \]
+            with probability at least \(1-\delta\) under the exact linear-operator
+            model. At the released \(s=12\) and 95% confidence, this elementary
+            envelope is non-informative. The observed ratio is therefore a drift
+            diagnostic; the local loss theorem remains conditional on the true residual.
+          </p>
+        </article>
       </div>
     </section>
 
-    <section class="section fade-in" id="results">
+    <section class="section section-shell fade-in" id="results" aria-labelledby="results-title">
+      <div class="section-index" aria-hidden="true">05 / Evidence</div>
       <div class="section-heading">
-        <h2>Benchmarking Randomized Subspace QAOA</h2>
+        <p class="eyebrow">Released CPU benchmark</p>
+        <h2 id="results-title">Compression, quality, and measured operator cost</h2>
         <p>
-          The released CPU study contains 36 paired MaxCut instances across three
-          graph families, \(n\in\{8,10\}\), depths \(p\in\{1,2\}\), and three
-          seeds. Methods share initial angles, optimizer, and step budget on each
-          instance; operator costs are counted rather than inferred from dimension.
+          The released CPU study contains 36 paired MaxCut runs on 14 unique
+          topologies (28 topology-depth clusters) across three graph families,
+          \(n\in\{8,10\}\), depths \(p\in\{1,2\}\), and three restart identifiers.
+          Full, fixed-rank, two-sided, and forward-only methods share the same
+          initial angle vector; the symmetry baseline starts at its orbit-wise
+          projection. Graph, initialization, and sketch seeds are separate, and
+          every row stores a canonical edge list and graph hash. Step budgets are
+          matched, and operator costs are counted.
         </p>
       </div>
+
+      <aside class="evidence-note" aria-label="Evidence provenance">
+        <strong>Trace every value.</strong>
+        <span>The cards below summarize the committed artifact. Audit the
+          <a href="code/results/maxcut_small.csv">row-level CSV</a>,
+          <a href="code/results/summary.json">machine-readable summary</a>, and
+          <a href="paper/main.pdf">paper protocol</a> together.</span>
+      </aside>
 
       <div class="result-stack">
         <article class="result-block">
           <div class="result-copy">
-            <h3>Depth-One Compression</h3>
+            <p class="card-tag">Depth one</p>
+            <h3>Compression with a small paired quality change</h3>
             <p>
-              Full multi-angle QAOA optimizes 22.4 parameters on average and
-              attains approximation ratio \(0.851\pm0.053\). Two-sided RSQ at
-              tolerance \(10^{-2}\) optimizes 13.4 parameters, a 41.5% mean
-              per-instance reduction, and attains \(0.849\pm0.053\). The paired
-              change is \(-0.21\pm0.89\) percentage points, reported as mean
-              plus or minus two standard errors.
+              Full multi-angle QAOA optimizes 23.7 parameters on average and
+              attains approximation ratio \(0.862\pm0.053\). Two-sided RSQ at
+              tolerance \(10^{-2}\) optimizes 14.7 parameters, a 39.1% mean
+              cluster-level reduction, and attains \(0.867\pm0.051\). The paired
+              change is \(+0.48\pm0.94\) percentage points, reported as mean
+              plus or minus two standard errors across 14 topology clusters.
+              Forward-only rank-8 RSQ compresses by 64.7% and changes quality by
+              \(-6.39\pm1.98\) points.
             </p>
           </div>
           <figure class="result-figure">
-            <img src="paper/figures/figure1_tradeoff.png" alt="Compression and approximation-ratio frontier for randomized subspace QAOA" />
+            <img src="paper/figures/figure1_tradeoff.png"
+                 width="1547" height="891" loading="lazy" decoding="async"
+                 alt="Compression and approximation-ratio frontier for Randomized Subspace QAOA" />
             <figcaption>Optimized-parameter reduction versus paired approximation-ratio change across depths and subspace methods.</figcaption>
           </figure>
         </article>
 
-        <article class="result-block">
+        <article class="result-block reverse">
           <div class="result-copy">
-            <h3>Depth-Two Failure Boundary</h3>
+            <p class="card-tag">Depth two</p>
+            <h3>A measured failure boundary</h3>
             <p>
-              At depth two, the average ambient dimension grows to 44.9 while RSQ
-              retains 13.4 directions, a 70.8% reduction. The paired quality
-              change becomes \(-2.86\pm1.43\) percentage points. The loss occurs
-              across the tested families and rules out a blanket claim that the
-              smallest observable space preserves quality at larger depth.
+              At depth two, the average ambient dimension grows to 47.4 while RSQ
+              retains 14.7 directions, a 69.6% reduction. The paired quality
+              change becomes \(-4.77\pm2.47\) percentage points. The loss occurs
+              across the tested families and rules out a blanket quality claim.
+              Forward-only rank-8 RSQ compresses by 82.3% with a
+              \(-14.73\pm2.65\)-point change.
             </p>
           </div>
           <figure class="result-figure">
-            <img src="paper/figures/figure2_family.png" alt="Family-resolved paired quality change for randomized subspace QAOA" />
+            <img src="paper/figures/figure2_family.png"
+                 width="1423" height="851" loading="lazy" decoding="async"
+                 alt="Family-resolved paired quality change for Randomized Subspace QAOA" />
             <figcaption>Family-resolved paired quality changes with uncertainty shown as two standard errors.</figcaption>
           </figure>
         </article>
 
         <article class="result-block">
           <div class="result-copy">
-            <h3>Measured Operator Cost</h3>
+            <p class="card-tag">Cost accounting</p>
+            <h3>Measured operator cost, without a query-advantage claim</h3>
             <p>
               Instrumented counters separate forward evaluations, Jacobian-vector
               products, and vector-Jacobian products. On these small exact
               simulators, subspace construction and refresh require more operator
-              applications than direct full-space optimization. The supported
-              result is controlled parameter compression, not a quantum-query
-              advantage.
+              applications than direct full-space optimization. At the primary
+              tolerance, two-sided RSQ averages 749/134/481 forward/JVP/VJP
+              actions at depth one and 867/155/556 at depth two. The categories
+              overlap and are not physical-shot totals. The supported result is
+              controlled parameter compression, not query advantage. All 324 of 324
+              scheduled checks triggered rebuilding, so this grid establishes
+              no empirical saving from the gate.
+              For this fixed weighted objective, one VJP returns the scalar
+              gradient directly; multi-weight amortization is untested. Full-space
+              SPSA also costs two objective evaluations per step, and no such
+              baseline is included for the forward-only comparison.
             </p>
           </div>
           <figure class="result-figure">
-            <img src="paper/figures/figure3_operator_budget.png" alt="Instrumented operator counts for full-space and randomized-subspace methods" />
+            <img src="paper/figures/figure3_operator_budget.png"
+                 width="1473" height="877" loading="lazy" decoding="async"
+                 alt="Instrumented operator counts for full-space and randomized-subspace methods" />
             <figcaption>Mean instrumented operator counts; categories are separate and are not additive.</figcaption>
           </figure>
         </article>
 
-        <article class="result-block">
+        <article class="result-block reverse">
           <div class="result-copy">
-            <h3>Certified Active Dimension</h3>
+            <p class="card-tag">Selected rank</p>
+            <h3>Residual-controlled active dimension</h3>
             <p>
               Tightening the tested tolerance from \(10^{-1}\) to \(10^{-2}\)
-              changes neither mean rank nor quality materially: RSQ retains 13.4
+              leaves mean rank unchanged while quality differs modestly: RSQ retains 14.7
               directions on average, approximately the observable count. The
-              certificate identifies the algebraic ceiling rather than additional
-              singular-value decay, while the ambient parameter count doubles
-              with depth.
+              residual identifies the algebraic ceiling rather than additional
+              singular-value decay, while the ambient dimension doubles with depth.
+              Five of 144 builds at tolerance \(10^{-2}\) and three of 144 at
+              \(10^{-1}\) reached the ceiling before the sampled indicator met its
+              requested tolerance.
             </p>
           </div>
           <figure class="result-figure">
-            <img src="paper/figures/figure4_rank.png" alt="Ambient multi-angle QAOA dimension and certified active rank" />
-            <figcaption>Ambient parameter dimension and certified RSQ rank across graph sizes and depths.</figcaption>
+            <img src="paper/figures/figure4_rank.png"
+                 width="1398" height="895" loading="lazy" decoding="async"
+                 alt="Ambient multi-angle QAOA dimension and residual-controlled active rank" />
+            <figcaption>Ambient parameter dimension and residual-controlled RSQ rank across graph sizes and depths.</figcaption>
           </figure>
         </article>
       </div>
     </section>
 
-    <section class="section fade-in">
+    <section class="section section-shell fade-in" id="package" aria-labelledby="package-title">
+      <div class="section-index" aria-hidden="true">06 / Package</div>
       <div class="section-heading">
-        <h2>Reproducible Research Package</h2>
+        <p class="eyebrow">Install, inspect, extend</p>
+        <h2 id="package-title">A reusable numerical core with an auditable research artifact</h2>
         <p>
-          The repository root and the <code>code/</code> directory install the
-          same <code>rsqaoa</code> package. The release contains the statevector
-          simulator, sensitivity operator, randomized factorization, optimizers,
-          baselines, experiment grid, committed row-level results, and tests.
+          The repository root and <code>code/</code> directory build the same
+          <code>rsqaoa</code> project. The installable distribution contains the
+          statevector simulator, backend-neutral sensitivity adapter, randomized
+          factorization, optimizers, baselines, and console command. Experiment
+          scripts, released results, paper sources, and generated figures remain
+          checkout-only research artifacts rather than hidden wheel payloads.
         </p>
       </div>
-      <div class="bibtex-box install-box">
-        <pre><code>python -m pip install "rsqaoa @ git+https://github.com/thmolena/Randomized-Subspace-QAOA.git#subdirectory=code"
-rsqaoa-experiment --n 10 --p 2 --family regular --tol 0.01
-python -m pytest code/tests -q</code></pre>
+
+      <div class="package-grid">
+        <div class="install-card">
+          <p class="card-tag">Install from Git now</p>
+          <pre><code>python -m pip install \
+  "rsqaoa @ git+https://github.com/thmolena/Randomized-Subspace-QAOA.git#subdirectory=code"
+
+rsqaoa-experiment --family ring --n 4 --p 1 --steps 1 --json</code></pre>
+          <p class="fine-print">
+            For a frozen environment, replace the default branch with a release tag
+            or commit SHA. Bare <code>pip install rsqaoa</code> requires a future,
+            separately authenticated package-index release and is not claimed here.
+          </p>
+        </div>
+        <div class="artifact-card">
+          <p class="card-tag">Repository-only reproduction</p>
+          <pre><code>git clone https://github.com/thmolena/Randomized-Subspace-QAOA.git
+cd Randomized-Subspace-QAOA
+python -m pip install -e "./code[dev]"
+python -m pytest code/tests -q
+cd code
+python experiments/run_experiment.py --config experiments/configs/maxcut_small.yaml
+python experiments/summarize_results.py
+python experiments/validate_release.py</code></pre>
+          <div class="artifact-links">
+            <a href="https://github.com/thmolena/Randomized-Subspace-QAOA/tree/main/code/src/rsqaoa" target="_blank" rel="noopener noreferrer">Package source</a>
+            <a href="code/results/maxcut_small.csv">Released rows</a>
+            <a href="code/results/summary.json">Result summary</a>
+            <a href="CITATION.cff">Citation metadata</a>
+          </div>
+        </div>
       </div>
     </section>
 
-    <section class="section fade-in" id="bibtex">
+    <section class="section section-shell fade-in" id="bibtex" aria-labelledby="bibtex-title">
+      <div class="section-index" aria-hidden="true">07 / Citation</div>
       <div class="section-heading">
-        <p class="eyebrow">Citation</p>
-        <h2>BibTeX</h2>
+        <p class="eyebrow">Reference this revision</p>
+        <h2 id="bibtex-title">BibTeX</h2>
       </div>
       <div class="bibtex-box">
-        <button class="copy-button" id="copyBibtex">Copy</button>
+        <button class="copy-button" id="copyBibtex" type="button"
+                aria-controls="bibtexCode" aria-describedby="copyStatus">Copy BibTeX</button>
         <pre><code id="bibtexCode">@article{huynh2026rsqaoa,
-  title   = {Randomized Subspace QAOA: Certified Active-Subspace
-             Optimization for Multi-Angle QAOA},
-  author  = {Huynh, Molena},
-  journal = {arXiv preprint},
-  year    = {2026}
+  title  = {Randomized Subspace QAOA: Residual-Controlled
+            Active-Subspace Optimization for Multi-Angle QAOA},
+  author = {Huynh, Molena},
+  year   = {2026}
 }</code></pre>
+        <p class="copy-status" id="copyStatus" role="status" aria-live="polite"></p>
       </div>
     </section>
   </main>
 
   <footer class="footer">
-    <p>Randomized Subspace QAOA · <a href="https://github.com/thmolena/Randomized-Subspace-QAOA">GitHub</a></p>
+    <p>Randomized Subspace QAOA · research software and reproducibility artifact</p>
+    <div>
+      <a href="https://github.com/thmolena/Randomized-Subspace-QAOA" target="_blank" rel="noopener noreferrer">GitHub</a>
+      <a href="paper/main.pdf">Paper</a>
+      <a href="CITATION.cff">CITATION.cff</a>
+      <a href="https://github.com/thmolena/Randomized-Subspace-QAOA/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">MIT license</a>
+    </div>
   </footer>
+
   <script src="script.js"></script>
 </body>
 </html>

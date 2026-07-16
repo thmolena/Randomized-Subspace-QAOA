@@ -5,13 +5,19 @@ authors:
   - family-names: "Huynh"
     given-names: "Molena"
     affiliation: "North Carolina State University"
-version: 0.1.0
-date-released: "2026-07-14"
+version: 0.3.0
+date-released: "2026-07-15"
 license: MIT
 repository-code: "https://github.com/thmolena/Randomized-Subspace-QAOA"
+abstract: >
+  Randomized Subspace QAOA uses matrix-free Jacobian-vector and
+  vector-Jacobian products to construct a residual-controlled, adaptive
+  parameter subspace for multi-angle QAOA. A distinct forward-only mode uses
+  finite-difference Jacobian-vector products, a fixed-rank Rayleigh--Ritz
+  sketch, and simultaneous-perturbation updates without reverse products.
 preferred-citation:
   type: article
-  title: "Randomized Subspace QAOA: Certified Active-Subspace Optimization for Multi-Angle QAOA"
+  title: "Randomized Subspace QAOA: Residual-Controlled Active-Subspace Optimization for Multi-Angle QAOA"
   authors:
     - family-names: "Huynh"
       given-names: "Molena"

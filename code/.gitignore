@@ -5,6 +5,7 @@ __pycache__/
 .eggs/
 build/
 dist/
+*.whl
 .venv/
 venv/
 env/
@@ -12,32 +13,25 @@ env/
 # Testing / coverage
 .pytest_cache/
 .coverage
+.coverage.*
 htmlcov/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
 
-# Experiment outputs
-results/
+# Experiment scratch outputs. The released evidence under results/ is tracked.
 lightning_logs/
-*.csv
+wandb/
+mlruns/
+outputs/
 *.ckpt
-*.png
-!paper/figures/*.png
-
-# The released benchmark and its machine-readable summary are evidence for
-# the manuscript and must ship with the repository.
-!results/
-!results/maxcut_small.csv
-!results/summary.json
-
-# LaTeX build
-paper/*.aux
-paper/*.log
-paper/*.out
-paper/*.bbl
-paper/*.blg
-paper/*.synctex.gz
-paper/*.pdf
+*.partial
+*.tmp
 
 # OS / editors
 .DS_Store
 .idea/
 .vscode/
+*~
+*.swp

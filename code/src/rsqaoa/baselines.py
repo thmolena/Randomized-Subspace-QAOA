@@ -51,10 +51,11 @@ def full_maqaoa(problem: MaxCutProblem, theta0: Optional[torch.Tensor] = None,
         hist.append(float(neg.detach()))
     with torch.no_grad():
         cut = float(problem.cut(theta))
-    # cost bookkeeping: full gradient == one vjp-equivalent per step
+    # Every optimization step evaluates F once and applies one reverse-mode
+    # objective gradient; the final reported cut adds one forward evaluation.
     return OptResult(theta=theta.detach(), cut=cut, history=hist,
                      n_params_opt=problem.dim,
-                     counts={"forward_F": steps, "vjp": steps, "jvp": 0})
+                     counts={"forward_F": steps + 1, "vjp": steps, "jvp": 0})
 
 
 def fixed_rank_subspace(problem: MaxCutProblem, rank: int,
@@ -65,11 +66,14 @@ def fixed_rank_subspace(problem: MaxCutProblem, rank: int,
     if theta0 is None:
         theta0 = problem.random_theta(generator=gen)
     theta0 = theta0.detach().clone().to(RDTYPE)
+    if int(rank) != rank or rank < 1:
+        raise ValueError("rank must be a positive integer")
     op = QAOASensitivity(problem, theta0)
     J = op.dense_jacobian()                       # (m, d) -- explicit, small only
     _, _, Vh = torch.linalg.svd(J, full_matrices=False)
-    Q = Vh[:rank].t().contiguous()                # (d, rank) top right singular vecs
-    z = torch.zeros(rank, dtype=RDTYPE, requires_grad=True)
+    actual_rank = min(int(rank), Vh.shape[0])
+    Q = Vh[:actual_rank].t().contiguous()         # (d, rank) top right singular vecs
+    z = torch.zeros(actual_rank, dtype=RDTYPE, requires_grad=True)
     opt = torch.optim.Adam([z], lr=lr)
     hist = []
     for _ in range(steps):
@@ -81,55 +85,75 @@ def fixed_rank_subspace(problem: MaxCutProblem, rank: int,
     with torch.no_grad():
         cut = float(problem.cut(theta0 + Q @ z))
     return OptResult(theta=(theta0 + Q @ z).detach(), cut=cut, history=hist,
-                     n_params_opt=rank, counts={"forward_F": steps, "vjp": steps})
+                     n_params_opt=actual_rank,
+                     counts={"forward_F": steps + 1, "vjp": steps, "jvp": 0,
+                             "dense_jacobian": 1})
 
 
 # --- symmetry reduction -----------------------------------------------------
-def _automorphism_orbits(n: int, edges) -> Tuple[List[int], List[int]]:
+def _automorphism_orbits(n: int, edges, weights=None) -> Tuple[List[int], List[int]]:
     """Return node-orbit and edge-orbit label arrays under the graph automorphism
     group (enumerated with VF2). Falls back to trivial orbits if enumeration is
     too large."""
     G = nx.Graph()
     G.add_nodes_from(range(n))
-    G.add_edges_from(edges)
-    node_orbit = list(range(n))
+    normalized_edges = [tuple(sorted((int(i), int(j)))) for i, j in edges]
+    if weights is None:
+        numeric_weights = [1.0] * len(normalized_edges)
+    else:
+        numeric_weights = [float(value) for value in weights]
+        if len(numeric_weights) != len(normalized_edges):
+            raise ValueError("weights and edges must have the same length")
+    G.add_weighted_edges_from([
+        (i, j, weight)
+        for (i, j), weight in zip(normalized_edges, numeric_weights)
+    ])
+    edge_index = {edge: idx for idx, edge in enumerate(normalized_edges)}
+    node_parent = list(range(n))
+    edge_parent = list(range(len(normalized_edges)))
+
+    def find(parent, item):
+        while parent[item] != item:
+            parent[item] = parent[parent[item]]
+            item = parent[item]
+        return item
+
+    def union(parent, a, b):
+        ra, rb = find(parent, a), find(parent, b)
+        if ra != rb:
+            parent[max(ra, rb)] = min(ra, rb)
+
     try:
-        gm = nx.algorithms.isomorphism.GraphMatcher(G, G)
-        autos = []
+        edge_match = nx.algorithms.isomorphism.numerical_edge_match(
+            "weight", 1.0
+        )
+        gm = nx.algorithms.isomorphism.GraphMatcher(
+            G, G, edge_match=edge_match
+        )
         for i, mapping in enumerate(gm.isomorphisms_iter()):
-            autos.append(mapping)
-            if i > 5000:                         # cap enumeration cost
-                break
-        # union-find over nodes using the automorphisms
-        parent = list(range(n))
-
-        def find(a):
-            while parent[a] != a:
-                parent[a] = parent[parent[a]]
-                a = parent[a]
-            return a
-
-        def union(a, b):
-            ra, rb = find(a), find(b)
-            if ra != rb:
-                parent[max(ra, rb)] = min(ra, rb)
-
-        for mapping in autos:
             for a, b in mapping.items():
-                union(a, b)
-        roots = {}
-        node_orbit = []
-        for a in range(n):
-            r = find(a)
-            node_orbit.append(roots.setdefault(r, len(roots)))
+                union(node_parent, a, b)
+            for edge_id, (a, b) in enumerate(normalized_edges):
+                mapped = tuple(sorted((mapping[a], mapping[b])))
+                union(edge_parent, edge_id, edge_index[mapped])
+            if i >= 5000:                        # safe under-refinement if capped
+                break
     except Exception:
-        pass
-    # edge orbits: label an edge by the sorted pair of node-orbit ids
-    edge_labels = {}
-    edge_orbit = []
-    for (i, j) in edges:
-        key = tuple(sorted((node_orbit[i], node_orbit[j])))
-        edge_orbit.append(edge_labels.setdefault(key, len(edge_labels)))
+        # The initialized singleton partitions are a valid conservative
+        # fallback: they never tie parameters that are not symmetry-equivalent.
+        node_parent = list(range(n))
+        edge_parent = list(range(len(normalized_edges)))
+
+    node_roots = {}
+    node_orbit = [
+        node_roots.setdefault(find(node_parent, a), len(node_roots))
+        for a in range(n)
+    ]
+    edge_roots = {}
+    edge_orbit = [
+        edge_roots.setdefault(find(edge_parent, e), len(edge_roots))
+        for e in range(len(normalized_edges))
+    ]
     return node_orbit, edge_orbit
 
 
@@ -138,15 +162,44 @@ def symmetry_reduced(problem: MaxCutProblem, theta0: Optional[torch.Tensor] = No
     """ma-QAOA with angles tied within automorphism orbits (per layer)."""
     gen = torch.Generator().manual_seed(seed)
     n, edges, p = problem.n, problem.edges, problem.p
-    node_orbit, edge_orbit = _automorphism_orbits(n, edges)
+    weights = None if problem.weights is None else problem.weights.detach().cpu().tolist()
+    node_orbit, edge_orbit = _automorphism_orbits(n, edges, weights=weights)
     n_no = max(node_orbit) + 1
     n_eo = max(edge_orbit) + 1
-    node_orbit_t = torch.tensor(node_orbit, dtype=torch.long)
-    edge_orbit_t = torch.tensor(edge_orbit, dtype=torch.long)
+    node_orbit_t = torch.tensor(
+        node_orbit, dtype=torch.long, device=problem.C.device
+    )
+    edge_orbit_t = torch.tensor(
+        edge_orbit, dtype=torch.long, device=problem.C.device
+    )
 
     # reduced params: per layer, one gamma per edge-orbit and one beta per node-orbit
     n_reduced = p * (n_eo + n_no)
-    red = (torch.rand(n_reduced, generator=gen, dtype=RDTYPE) * np.pi).requires_grad_(True)
+    if theta0 is None:
+        red = torch.rand(n_reduced, generator=gen, dtype=RDTYPE) * np.pi
+        red = red.to(problem.C.device)
+    else:
+        if theta0.ndim != 1 or theta0.numel() != problem.dim:
+            raise ValueError(f"theta0 must have shape ({problem.dim},)")
+        theta0 = theta0.detach().to(device=problem.C.device, dtype=RDTYPE)
+        gammas = theta0[: p * len(edges)].reshape(p, len(edges))
+        betas = theta0[p * len(edges):].reshape(p, n)
+        reduced_gammas = torch.stack([
+            torch.stack([
+                gammas[layer, edge_orbit_t == orbit].mean()
+                for orbit in range(n_eo)
+            ])
+            for layer in range(p)
+        ])
+        reduced_betas = torch.stack([
+            torch.stack([
+                betas[layer, node_orbit_t == orbit].mean()
+                for orbit in range(n_no)
+            ])
+            for layer in range(p)
+        ])
+        red = torch.cat([reduced_gammas.reshape(-1), reduced_betas.reshape(-1)])
+    red = red.detach().clone().requires_grad_(True)
 
     def expand(red_params: torch.Tensor) -> torch.Tensor:
         rg = red_params[: p * n_eo].reshape(p, n_eo)
@@ -168,4 +221,4 @@ def symmetry_reduced(problem: MaxCutProblem, theta0: Optional[torch.Tensor] = No
         cut = float(problem.cut(theta))
     return OptResult(theta=theta.detach(), cut=cut, history=hist,
                      n_params_opt=n_reduced,
-                     counts={"forward_F": steps, "vjp": steps})
+                     counts={"forward_F": steps + 1, "vjp": steps, "jvp": 0})

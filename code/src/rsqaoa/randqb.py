@@ -3,8 +3,10 @@ Frobenius- or spectral-norm residual indicator, rank pruning, and subspace
 recycling.
 
 Given a linear operator ``A`` accessible only through ``matvec`` (``A u``) and
-``rmatvec`` (``A^T y``), build orthonormal ``Q`` and ``B = Q^T A`` with
-``||A - Q B|| <= tol * ||A||`` in the chosen norm, choosing the rank adaptively.
+``rmatvec`` (``A^T y``), build orthonormal ``Q`` and ``B = Q^T A`` until a
+randomized estimate of ``||A - Q B|| / ||A||`` meets ``tol`` or the requested
+rank cap is reached.  The returned residual is an indicator, not a deterministic
+upper bound.
 
 Design choices (validated in ``tests/``):
 
@@ -12,7 +14,7 @@ Design choices (validated in ``tests/``):
   self-correcting as the approximation improves.
 * **Spectral indicator.** Randomized power iteration on the residual operator
   ``R = A - QB`` estimates ``||R||_2`` without forming ``R`` -- a worst-direction
-  certificate rather than an average one.
+  diagnostic rather than an average one.
 * **Rank pruning.** Directions carrying negligible energy are dropped, decoupling
   the retained rank from the (BLAS-friendly) block size.
 * **Recycling.** A previous basis ``Q_init`` seeds the factorization; ``B`` is
@@ -26,7 +28,9 @@ For the ma-QAOA active subspace we factor ``A = J^T`` (``d x m``), so ``Q``
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 from typing import Callable, Optional, Tuple
+import warnings
 
 import torch
 
@@ -43,6 +47,70 @@ class QBResult:
     indicator: str           # "fro" or "spec"
     matvecs: int
     rmatvecs: int
+    converged: bool          # whether the estimated residual met tol
+    stop_reason: str         # "tolerance_met", "maxrank", or "no_progress"
+
+
+@dataclass(frozen=True)
+class ResidualRatioConfidence:
+    """Chebyshev/union-bound envelope for a Gaussian probe ratio.
+
+    If ``informative`` is true, multiplying an observed Frobenius residual
+    ratio by ``lower_multiplier`` and ``upper_multiplier`` gives a simultaneous
+    confidence envelope for the true ratio under the exact linear-operator
+    model.  The bound is deliberately distribution-light and can be loose.
+    """
+
+    n_probe: int
+    failure_probability: float
+    relative_radius: float
+    lower_multiplier: float
+    upper_multiplier: float
+    informative: bool
+
+
+def residual_ratio_confidence(n_probe: int,
+                              failure_probability: float = 0.05
+                              ) -> ResidualRatioConfidence:
+    """Return a rigorous finite-probe envelope for a Frobenius residual ratio.
+
+    For Gaussian probes, each trace estimator has relative Chebyshev radius
+    ``sqrt(2 / (s * delta))``.  Applying a union bound to numerator and
+    denominator gives ``t = 2 / sqrt(s * delta)``.  When ``t < 1``, the true
+    norm ratio lies between
+
+    ``sqrt((1-t)/(1+t)) * observed`` and
+    ``sqrt((1+t)/(1-t)) * observed``
+
+    with probability at least ``1-delta``.  When ``t >= 1`` the elementary
+    bound is non-informative; the returned upper multiplier is infinite.  This
+    makes the distinction between a useful randomized diagnostic and a
+    run-wise confidence statement explicit to callers.
+    """
+    if int(n_probe) != n_probe or n_probe < 1:
+        raise ValueError("n_probe must be a positive integer")
+    if not 0.0 < failure_probability < 1.0:
+        raise ValueError("failure_probability must lie in (0, 1)")
+    t = 2.0 / math.sqrt(float(n_probe) * failure_probability)
+    if t >= 1.0:
+        return ResidualRatioConfidence(
+            n_probe=int(n_probe),
+            failure_probability=float(failure_probability),
+            relative_radius=t,
+            lower_multiplier=0.0,
+            upper_multiplier=math.inf,
+            informative=False,
+        )
+    lower = math.sqrt((1.0 - t) / (1.0 + t))
+    upper = 1.0 / lower
+    return ResidualRatioConfidence(
+        n_probe=int(n_probe),
+        failure_probability=float(failure_probability),
+        relative_radius=t,
+        lower_multiplier=lower,
+        upper_multiplier=upper,
+        informative=True,
+    )
 
 
 # --------------------------------------------------------------------------
@@ -98,6 +166,28 @@ def randqb(matvec: Callable[[torch.Tensor], torch.Tensor],
     basis: ``B`` is recomputed at the current operator and only missing
     directions are added.
     """
+    if not callable(matvec) or not callable(rmatvec):
+        raise TypeError("matvec and rmatvec must be callable")
+    if int(dout) != dout or int(din) != din or dout < 1 or din < 1:
+        raise ValueError("dout and din must be positive integers")
+    dout, din = int(dout), int(din)
+    if not 0.0 < tol < 1.0:
+        raise ValueError("tol must lie in (0, 1)")
+    if indicator not in {"fro", "spec"}:
+        raise ValueError("indicator must be 'fro' or 'spec'")
+    for name, value in (("block", block), ("n_norm", n_norm),
+                        ("n_res", n_res), ("spec_iters", spec_iters)):
+        if int(value) != value or value < 1:
+            raise ValueError(f"{name} must be a positive integer")
+    if maxrank is not None and (int(maxrank) != maxrank or maxrank < 1):
+        raise ValueError("maxrank must be a positive integer when supplied")
+    if prune_ratio < 0:
+        raise ValueError("prune_ratio must be nonnegative")
+    if Q_init is not None:
+        if Q_init.ndim != 2 or Q_init.shape[0] != dout:
+            raise ValueError(f"Q_init must have shape ({dout}, r)")
+        if not torch.isfinite(Q_init).all():
+            raise ValueError("Q_init must contain only finite values")
     if maxrank is None:
         maxrank = min(dout, din)
     target_maxrank = min(int(maxrank), dout, din)
@@ -147,6 +237,7 @@ def randqb(matvec: Callable[[torch.Tensor], torch.Tensor],
         return _frob_residual(matvec, Q, B, din, n_res, generator) / normA
 
     est = rel_res()
+    no_progress = False
     while Q.shape[1] < work_maxrank and est > tol:
         Om = torch.randn(din, block, generator=generator, dtype=RDTYPE)
         Y = torch.stack([matvec(Om[:, i]) for i in range(block)], dim=1)
@@ -164,6 +255,11 @@ def randqb(matvec: Callable[[torch.Tensor], torch.Tensor],
             B = torch.cat([B, Bi], dim=0)
             if Q.shape[1] > work_maxrank:
                 Q, B = Q[:, :work_maxrank], B[:work_maxrank]
+        else:
+            # No numerically independent direction was found.  Continuing with
+            # an unchanged basis would make the fixed-tolerance loop infinite.
+            no_progress = True
+            break
         est = rel_res()
 
     if Q.shape[1] > target_maxrank:
@@ -177,8 +273,16 @@ def randqb(matvec: Callable[[torch.Tensor], torch.Tensor],
         B = sb[:r, None] * Vhb[:r, :]
         est = rel_res()
 
+    converged = bool(est <= tol)
+    if converged:
+        stop_reason = "tolerance_met"
+    elif no_progress:
+        stop_reason = "no_progress"
+    else:
+        stop_reason = "maxrank"
     return QBResult(Q=Q, B=B, rank=Q.shape[1], rel_residual=est,
-                    indicator=indicator, matvecs=mv, rmatvecs=rmv)
+                    indicator=indicator, matvecs=mv, rmatvecs=rmv,
+                    converged=converged, stop_reason=stop_reason)
 
 
 # --------------------------------------------------------------------------
@@ -202,12 +306,21 @@ def active_subspace(op: QAOASensitivity, tol: float = 1e-2, block: int = 4,
 
 def active_subspace_adjoint_free(op: QAOASensitivity, rank: int, oversamp: int = 10,
                                  jvp_mode: str = "fd",
+                                 Q_init: Optional[torch.Tensor] = None,
                                  generator: Optional[torch.Generator] = None
                                  ) -> Tuple[torch.Tensor, float]:
     """Forward-only (adjoint-free) active subspace via a Rayleigh--Ritz sketch of
     ``J^T J`` using only ``jvp``. No adjoint, so no subspace iteration: a single
     pass that trades accuracy for forward-only access (e.g. QPU shots). The
-    accuracy cost is measured, not assumed."""
+    accuracy cost is measured, not assumed. When ``Q_init`` is supplied, its
+    span is augmented with fresh orthogonal trial directions and the combined
+    space is recompressed at the current operator. This gives a JVP-only
+    recycled refresh rather than restarting from an unrelated sketch.
+    """
+    if int(rank) != rank or rank < 1:
+        raise ValueError("rank must be a positive integer")
+    if int(oversamp) != oversamp or oversamp < 0:
+        raise ValueError("oversamp must be a nonnegative integer")
     if generator is None:
         generator = torch.Generator().manual_seed(0)
     # A thin QR factorization of a ``d x k`` sketch has only ``min(d, k)``
@@ -216,28 +329,52 @@ def active_subspace_adjoint_free(op: QAOASensitivity, rank: int, oversamp: int =
     # hardware problem whose parameter dimension is below ``rank+oversamp``.
     k = min(op.d, rank + oversamp)
     rank = min(rank, k)
-    Om = torch.randn(op.d, k, generator=generator, dtype=RDTYPE)
-    Q0, _ = torch.linalg.qr(Om)
+    if Q_init is not None:
+        Q_init = torch.as_tensor(Q_init, dtype=RDTYPE)
+        if (Q_init.ndim != 2 or Q_init.shape[0] != op.d
+                or not torch.isfinite(Q_init).all()):
+            raise ValueError("Q_init must be a finite matrix with op.d rows")
+        Q_seed, _ = torch.linalg.qr(Q_init, mode="reduced")
+        Q_seed = Q_seed[:, :min(Q_seed.shape[1], k)]
+    else:
+        Q_seed = torch.zeros(op.d, 0, dtype=RDTYPE)
+
+    n_fresh = k - Q_seed.shape[1]
+    if n_fresh:
+        omega = torch.randn(op.d, n_fresh, generator=generator, dtype=RDTYPE)
+        if Q_seed.shape[1]:
+            omega = omega - Q_seed @ (Q_seed.t() @ omega)
+        Q_fresh, _ = torch.linalg.qr(omega, mode="reduced")
+        Q0, _ = torch.linalg.qr(
+            torch.cat([Q_seed, Q_fresh[:, :n_fresh]], dim=1), mode="reduced")
+    else:
+        Q0 = Q_seed
     Y = torch.stack([op.jvp(Q0[:, i], mode=jvp_mode) for i in range(k)], dim=1)
     S = Y.t() @ Y
     evals, evecs = torch.linalg.eigh(S)
     idx = torch.argsort(evals, descending=True)[:rank]
-    Qz, _ = torch.linalg.qr(Q0 @ evecs[:, idx])
+    Qz, _ = torch.linalg.qr(Q0 @ evecs[:, idx], mode="reduced")
     captured = float(evals[idx].clamp_min(0).sum()
                      / evals.clamp_min(0).sum().clamp_min(1e-300))
     return Qz, captured
 
 
-def certified_residual(op: QAOASensitivity, Q: torch.Tensor, n_probe: int = 12,
-                       indicator: str = "fro", spec_iters: int = 20,
-                       generator: Optional[torch.Generator] = None) -> float:
-    """Randomized certificate that ``Q`` still spans the active subspace of the
+def randomized_residual(op: QAOASensitivity, Q: torch.Tensor, n_probe: int = 12,
+                        indicator: str = "fro", spec_iters: int = 20,
+                        generator: Optional[torch.Generator] = None) -> float:
+    """Randomized indicator of whether ``Q`` still spans the active subspace of the
     *current* ``J``: estimate ``||J^T - Q Q^T J^T|| / ||J^T||`` in the chosen
     norm. Drives the subspace-refresh trigger.
 
     With ``A = J^T``: ``matvec(u)=J^T u`` (a vjp), ``rmatvec(y)=J y`` (a jvp),
     and ``B = Q^T A`` has rows ``B[i]=J Q[:,i]`` (a jvp of each basis column).
     """
+    if int(n_probe) != n_probe or n_probe < 1:
+        raise ValueError("n_probe must be a positive integer")
+    if indicator not in {"fro", "spec"}:
+        raise ValueError("indicator must be 'fro' or 'spec'")
+    if int(spec_iters) != spec_iters or spec_iters < 1:
+        raise ValueError("spec_iters must be a positive integer")
     if generator is None:
         generator = torch.Generator().manual_seed(0)
     matvec = lambda u: op.vjp(u)
@@ -259,7 +396,7 @@ def certified_residual(op: QAOASensitivity, Q: torch.Tensor, n_probe: int = 12,
     return num / max(den, 1e-30)
 
 
-def certified_residual_forward_only(
+def randomized_residual_forward_only(
         op: QAOASensitivity, Q: torch.Tensor, n_probe: int = 12,
         generator: Optional[torch.Generator] = None) -> float:
     """Estimate discarded sensitivity using only forward ``Jv`` products.
@@ -267,8 +404,10 @@ def certified_residual_forward_only(
     For Gaussian parameter-space probes ``v``, compare ``Jv`` with
     ``JQQ^T v``.  The root ratio of their accumulated squared norms estimates
     ``||J(I-QQ^T)||_F / ||J||_F`` without a VJP or a differentiable device.
-    This is the drift certificate used by the adjoint-free optimizer.
+    This is the drift diagnostic used by the adjoint-free optimizer.
     """
+    if int(n_probe) != n_probe or n_probe < 1:
+        raise ValueError("n_probe must be a positive integer")
     if generator is None:
         generator = torch.Generator().manual_seed(0)
     num = 0.0
@@ -281,3 +420,28 @@ def certified_residual_forward_only(
         num += float((jv - jv_projected).pow(2).sum())
         den += float(jv.pow(2).sum())
     return (num / max(den, 1e-30)) ** 0.5
+
+
+def certified_residual(*args, **kwargs) -> float:
+    """Deprecated alias for :func:`randomized_residual`.
+
+    The older name could be read as a deterministic certificate even though a
+    finite randomized probe estimate need not upper-bound the true residual.
+    """
+    warnings.warn(
+        "certified_residual is deprecated; use randomized_residual",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return randomized_residual(*args, **kwargs)
+
+
+def certified_residual_forward_only(*args, **kwargs) -> float:
+    """Deprecated alias for :func:`randomized_residual_forward_only`."""
+    warnings.warn(
+        "certified_residual_forward_only is deprecated; use "
+        "randomized_residual_forward_only",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return randomized_residual_forward_only(*args, **kwargs)

@@ -2,6 +2,7 @@
 (Kronecker-product) implementation, and check trivial-angle sanity."""
 
 import numpy as np
+import pytest
 import torch
 
 from rsqaoa.circuits import MaxCutProblem, edge_expectations
@@ -32,7 +33,10 @@ def _dense_edge_expectations(n, edges, gammas, betas):
                            [-1j * np.sin(b), np.cos(b)]], dtype=np.complex128)
             mats = [I2] * n
             mats[n - 1 - k] = RX          # qubit k is LSB -> kron position n-1-k
-            psi = kron_list(mats) @ psi
+            # ``einsum`` keeps this dense Kronecker reference independent of
+            # the tensor-axis implementation while avoiding platform BLAS
+            # warning noise for tiny complex matrix-vector products.
+            psi = np.einsum("ij,j->i", kron_list(mats), psi, optimize=False)
     probs = np.abs(psi) ** 2
     return cuts @ probs
 
@@ -68,3 +72,31 @@ def test_cut_value_in_range():
         theta = prob.random_theta(generator=g)
         c = float(prob.cut(theta))
         assert -1e-9 <= c <= len(edges) + 1e-9
+
+
+@pytest.mark.parametrize(
+    "kwargs, message",
+    [
+        ({"n": 1, "edges": [(0, 1)], "p": 1}, "n must"),
+        ({"n": 3, "edges": [(0, 0)], "p": 1}, "self-loops"),
+        ({"n": 3, "edges": [(0, 1), (1, 0)], "p": 1}, "duplicate"),
+        ({"n": 3, "edges": [(0, 3)], "p": 1}, "outside"),
+        ({"n": 3, "edges": [(0, 1)], "p": 0}, "p must"),
+        ({"n": 3, "edges": [(0, 1)], "p": 1, "weights": [1.0, 2.0]},
+         "weights must"),
+    ],
+)
+def test_problem_rejects_invalid_contracts(kwargs, message):
+    with pytest.raises(ValueError, match=message):
+        MaxCutProblem(**kwargs)
+
+
+def test_problem_normalizes_weight_dtype_and_rejects_non_cpu_backend():
+    problem = MaxCutProblem(
+        n=3, edges=[(1, 0), (1, 2)], p=1,
+        weights=torch.tensor([1.0, 2.0], dtype=torch.float32),
+    )
+    assert problem.edges == [(0, 1), (1, 2)]
+    assert problem.weights.dtype == torch.float64
+    with pytest.raises(ValueError, match="CPU-only"):
+        MaxCutProblem(n=3, edges=[(0, 1)], p=1, device="meta")
