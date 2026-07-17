@@ -32,6 +32,7 @@
     "paper/figures/figure3_operator_budget.png": "f417f2cb2770629c230935c276c4157d315cba05f1f59b6e40ee02cac2730a45",
     "paper/figures/figure4_rank.pdf": "772963d553097d708ce3f7fbf10cc9f4bc89e310329eb8b7e8f839de7b732adf",
     "paper/figures/figure4_rank.png": "69da510b1346f333b33040d669d3986037d6396daef285349af4a44dd17ca42d",
+    "paper/legacy_evidence_claims.tex": "d0d14201718751fefab0a3d95eb0376a142b4b14fe4686e3cff3525dd76b8272",
     "paper/tables/table1_summary.tex": "c03c83c87db8fdb9790d4b6e2d71f0aa4e05faf81c0083dda8cdea7979a84b03"
   },
   "merge_shards_sha256": "105d5013f5af4f6f099bd5b25e1b0dbce59a4b5a2b1ce25fff907dd077a22317",
@@ -309,7 +310,7 @@
     "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
     "python_version": "3.13.12"
   },
-  "summarizer_sha256": "b2d3e7bd67402f642a0e33991ea62f721e0a6afd048dbbd6b870bf4ba902bea4",
+  "summarizer_sha256": "f7866e721203aeb280c7a6ed3c5c07df89c7668beda4f1077af792a7d112b3b4",
   "uncertainty_convention": {
     "compression": "mean of graph-depth cluster-mean fractions",
     "paired_change": "two standard errors across graph-depth cluster means; descriptive",

@@ -1,6 +1,6 @@
 \documentclass[11pt]{article}
 
-\usepackage[margin=0.88in]{geometry}
+\usepackage[margin=0.82in]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage{amsmath,amssymb,amsthm,bm}
 \usepackage{array,booktabs}
@@ -9,800 +9,703 @@
 \usepackage[numbers,sort&compress]{natbib}
 \usepackage[colorlinks=true,allcolors=blue]{hyperref}
 \hypersetup{
-  pdftitle={Randomized Subspace QAOA: Residual-Controlled Active-Subspace Optimization for Multi-Angle QAOA},
+  pdftitle={Task-distribution-weighted observable tangent spaces for repeated multi-angle QAOA},
   pdfauthor={Molena Huynh},
-  pdfsubject={Matrix-free active-subspace optimization for multi-angle QAOA},
-  pdfkeywords={QAOA, randomized linear algebra, active subspaces, variational quantum algorithms, MaxCut}
+  pdfsubject={A matched resource audit of reusable observable tangent spaces},
+  pdfkeywords={QAOA, randomized linear algebra, multi-objective optimization, SPSA, resource accounting}
 }
 
 \newtheorem{theorem}{Theorem}
 \newtheorem{proposition}{Proposition}
-\newtheorem{remark}{Remark}
-\newcommand{\J}{\mathbf{J}}
-\newcommand{\Q}{\mathbf{Q}}
-\newcommand{\I}{\mathbf{I}}
 \newcommand{\E}{\mathbb{E}}
 \newcommand{\R}{\mathbb{R}}
+\newcommand{\J}{\mathbf{J}}
+\newcommand{\M}{\mathbf{M}}
+\newcommand{\Q}{\mathbf{Q}}
+\newcommand{\W}{\mathbf{W}}
+\newcommand{\I}{\mathbf{I}}
 \newcommand{\norm}[1]{\left\lVert #1\right\rVert}
-\newcommand{\projector}{\Q\Q^{\mathsf T}}
+\newcommand{\trans}{\mathsf{T}}
 
-\title{\textbf{Randomized Subspace QAOA:\\
-Residual-Controlled Active-Subspace Optimization for Multi-Angle QAOA}}
+\title{\textbf{Task-distribution-weighted observable tangent spaces\\
+for repeated multi-angle QAOA: a matched resource audit}}
 \author{Molena Huynh\\
 North Carolina State University\\
 \texttt{molena.huynh@jmp.com}}
-\date{July 15, 2026}
+\date{July 16, 2026}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-Multi-angle QAOA assigns independent cost and mixer angles, yielding
-$d=p(|E|+|V|)$ parameters.  Randomized Subspace QAOA (RSQ) optimizes within a
-matrix-free approximation to an observable-Jacobian row space and monitors
-discarded sensitivity with probes.  A forward-only variant combines
-finite-difference Jacobian actions with simultaneous perturbation.  We establish
-a gradient row-space identity, a probe-confidence envelope, and local guarantees
-conditional on the true residual.  On 36 paired exact-statevector MaxCut runs
-over 14 topologies, RSQ at tolerance $10^{-2}$ reduces optimized dimension by
-$39.1\%$ at depth one and $69.6\%$ at depth two.  Paired approximation-ratio
-changes are $+0.48\pm0.94$ and $-4.77\pm2.47$ percentage points, with descriptive
-uncertainty over 14 topology clusters per depth.  All scheduled checks trigger
-rebuilding, and access accounting shows setup overhead.  The results establish
-compression with a depth-dependent quality trade-off, not adaptive timing,
-hardware scaling, or query advantage.
+Repeated optimization tasks on one graph can differ only in observable
+weights, suggesting reuse of circuit sensitivity geometry.  We define a
+task-distribution-weighted observable tangent space for multi-angle QAOA.  If
+$\M=\E[ww^{\trans}]=LL^{\trans}$, leading left singular vectors of
+$\J^{\trans}L$ minimize expected discarded local gradient energy.  We construct
+it matrix-free from a training bank and evaluate independent weight
+trajectories with matched full- and reduced-space SPSA.  Across 16
+exact-statevector topology--depth cells from eight graphs, residual-gated reuse
+changes mean approximation ratio by $-1.57\pm1.04$ points (descriptive mean
+$\pm2$ s.e.) and requires $1.218\times$ the forward evaluations of full SPSA,
+failing the gate.  Its 10.05-point advantage over a
+rank-8 random basis is not refresh- or cost-matched.  In a separate 256-shot
+objective pilot on eight graphs, per-task refresh gives $+0.61\pm1.57$ points,
+but construction uses exact observables and simulator VJPs.  Neither
+demonstrates query, hardware or quantum advantage.  The study defines a
+falsifiable representation and the evidence required.
 \end{abstract}
 
 \section{Introduction}
 
-The Quantum Approximate Optimization Algorithm (QAOA) alternates a cost
-Hamiltonian and a mixer, then adjusts their angles with a classical optimizer
-\citep{farhi2014qaoa,hadfield2019quantum,zhou2020qaoa}.  Multi-angle QAOA
-(ma-QAOA) replaces the two shared angles in each layer by one phase parameter per
-cost term and one mixer parameter per qubit \citep{herrman2022multiangle}.  This
-removes a strong tying constraint, but it changes the classical search dimension
+The Quantum Approximate Optimization Algorithm (QAOA) alternates problem and
+mixer unitaries and tunes their angles with a classical optimizer
+\citep{farhi2014qaoa,hadfield2019quantum}.  Multi-angle QAOA (ma-QAOA) replaces
+the two shared angles per layer with one phase angle per cost term and one
+mixer angle per vertex \citep{herrman2022multiangle}.  For a graph with
+$m=|E|$ edges, $n=|V|$ vertices and depth $p$, this raises the search dimension
 from $2p$ to
 \begin{equation}
- d=p(|E|+|V|).
+ d=p(m+n).
  \label{eq:dimension}
 \end{equation}
-The added coordinates are useful only when they create independent changes in
-measurable observables.  Searching all of them indiscriminately can therefore
-spend optimization effort in directions to which the circuit is locally
-insensitive.
+The additional coordinates can improve expressivity, but only their action on
+measurable observables can affect an objective.  This creates a natural
+question: can the locally relevant parameter directions be learned once and
+reused?
 
-Prior QAOA dimension-reduction methods act on different mathematical objects.
-Symmetry-aware tying uses graph automorphisms to identify redundant ma-QAOA
-angles and has preserved objective quality on many symmetric instances
-\citep{shi2022notallangles}.  ANASTAARS instead constructs adaptive random
-Johnson--Lindenstrauss search subspaces, fits interpolation models, reuses
-measurements, and adjusts trust regions to estimated noise
-\citep{dzahini2025anastaars}.  Hamiltonian-guided leverage embedding compresses
-weighted Ising feature matrices assembled from measurement samples before a
-reduced trust-region search \citep{mukherjee2026hgle}.  Kernel PCA learns a
-nonlinear, cross-instance manifold of promising QAOA parameters from training
-graphs \citep{brahmandam2026kpca}, while low-rank tensor completion reconstructs
-variational landscapes from partial observations \citep{hao2024landscape}.
+The question becomes concrete when one graph supports a sequence of related
+objectives.  Let $F(\bm\theta)\in\R^m$ contain the expected edge-cut
+observables and let a task be the scalarization
+$C_w(\bm\theta)=w^{\trans}F(\bm\theta)$.  Such weight families arise when
+priorities, scenarios or Pareto scalarizations change while the circuit
+architecture remains fixed.  Multi-objective QAOA makes this repeated-task
+setting operationally relevant \citep{kotil2025multiobjective}.  At any fixed
+anchor, all task gradients satisfy
+$\nabla C_w=\J^{\trans}w$, where
+$\J=\partial F/\partial\bm\theta$.  A representation of the range of
+$\J^{\trans}$ is therefore reusable across weights.
 
-RSQ targets a narrower object: the local parameter-space right singular
-subspace of the vector-valued observable Jacobian $\J(\bm\theta)$.  It accesses
-that operator through JVPs and VJPs (or JVPs alone), and monitors the residual
-sensitivity in the orthogonal complement as the anchor moves.  This distinction
-specifies the operator and diagnostic; it does not assert priority for
-subspace optimization in QAOA.  Classical active subspaces are commonly defined
-from a gradient outer product averaged over an input distribution
-\citep{constantine2014active,constantine2015active}.  We therefore use
-\emph{local observable-sensitivity subspace} for the row space of a
-vector-valued Jacobian at one anchor; it is local, observable-dependent, and not
-a distribution-averaged global active subspace.
+That algebra alone is insufficient.  For a single scalar objective, one
+vector-Jacobian product already returns its complete gradient, while SPSA uses
+two scalar objective evaluations per iteration in either full or reduced
+coordinates \citep{spall1992spsa}.  Constructing a basis can consequently cost
+more than direct optimization.  A useful study must specify the task
+distribution, prevent future evaluation weights from entering construction,
+compare matched optimizers, and report basis, refresh and measurement costs
+without converting simulator differentiation into fictitious hardware
+queries.
 
-RSQ combines an observable-space formulation with adaptive matrix-free
-randomized linear algebra.  The numerical primitive is fixed-tolerance
-randomized QB, which approximates a linear operator through products, estimates
-its residual from random probes, and chooses its output rank adaptively
-\citep{halko2011finding,yu2018randqb,martinsson2020randomized}.
-Our contribution is not a new general-purpose QB factorization or a priority
-claim for low-dimensional QAOA optimization.  It is the specific coupling of a
-local observable-Jacobian operator, matrix-free sensitivity actions, randomized
-residual monitoring, and recycled basis updates.  A forward-only realization
-replaces adjoint actions during construction, monitoring, and optimization.
-The experiments count the setup cost introduced by this coupling instead of
-treating dimension reduction as a proxy for resource savings.
+We develop and audit such a protocol.  The representation is weighted by the
+second moment of a training task distribution, approximated with randomized QB
+through products with $\J^{\trans}L$ and its transpose.  An independent
+evaluation trajectory tests transfer.  Full-space and reduced-space SPSA use
+the same 40-step schedule and the same number of scalar objective calls except
+for an explicitly counted residual gate.  Six controls probe reusable geometry,
+refresh timing and construction cost without isolating all three at matched
+total cost.  We define a development
+criterion before interpreting the pilot: the gated method must be no more than
+one approximation-ratio point below full SPSA, exceed a rank-8 random basis
+with the same maximum rank cap, and use at most $1.25\times$ the full method's
+forward evaluations.
 
-The central empirical question is not whether a subspace can be constructed,
-but whether the resulting compression preserves optimization quality after its
-setup cost is counted.  We answer that question on a deliberately small,
-fully released benchmark.  The answer is conditional: at depth one, RSQ closely
-tracks full ma-QAOA while optimizing substantially fewer coordinates; at depth
-two, stronger compression incurs a measurable quality loss; and on the studied
-simulator the operator setup is more expensive than direct optimization.  This
-claim boundary is a result, because it separates structural compression from an
-unsubstantiated hardware-speedup claim.
+The outcome is deliberately not rewritten into a success claim.  The learned
+subspace exceeds a random subspace in an unmatched comparison, but the exact gated method
+misses the quality condition and refreshes on most opportunities.  A small
+finite-shot pilot is directionally favorable for per-task refresh but is
+not end-to-end sampled and is statistically unresolved.  The contribution is
+therefore twofold: a theorem and implementation for task-weighted tangent
+representations, and a matched audit that establishes where the present
+workflow fails to become an operational advantage.
 
 \paragraph{Contributions.}
 \begin{enumerate}
-\item We formulate the per-edge observable Jacobian as a matrix-free operator
-and prove that its row space contains the local gradient of any weighted
-MaxCut objective.
-\item We give a residual-gated optimizer with a recycled update that can
-rotate a saturated basis: old directions are augmented by current residual
-directions and the combined space is recompressed.  The public result exposes
-every residual check, refresh, retained rank, operator count, final iterate and
-best observed iterate rather than hiding adaptive decisions behind one score.
-\item We give an end-to-end forward-only path: finite-difference JVPs construct
-and refresh the basis, and two-evaluation SPSA updates the reduced coordinates.
-A dedicated test fails if reverse-mode differentiation is invoked.
-\item We release paired results, operator counters, tests, figures, and the
-script that regenerates every aggregate in this article.
+\item We prove that the leading left singular subspace of
+$\J^{\trans}L$ is the optimal rank-$r$ parameter representation for expected
+squared local gradient retention under a specified task-weight second moment.
+\item We implement the operator without materializing a dense Jacobian and
+separate basis-training weights from a disjoint evaluation trajectory that
+shares only the fixed generative weight model.
+\item We conduct a matched full-versus-reduced SPSA audit with no-refresh,
+fixed-refresh, residual-gated, per-task, random-refresh and random-basis
+controls, and an additive ledger for scalar objectives, vector observables,
+shots, sensitivity actions, subspace builds, checks and refreshes.
+\item We report the failed exact development gate and the inconclusive hybrid
+finite-shot pilot as observed, then state a concrete confirmatory and hardware
+path rather than claiming query or quantum advantage.
 \end{enumerate}
+
+\subsection{Related work and scope}
+
+Graph symmetries can tie ma-QAOA angles before optimization
+\citep{shi2022notallangles}.  Active-subspace analysis instead uses averaged
+gradient outer products to find influential coordinates
+\citep{constantine2014active}.  Randomized range finding and fixed-precision QB
+provide matrix-free tools for approximating such spaces
+\citep{halko2011finding,yu2018randqb,martinsson2020randomized}.  Noise-aware
+random-subspace optimizers address a different object: they adapt a classical
+search subspace and local model under noisy scalar observations rather than
+factor a vector-observable sensitivity operator
+\citep{dzahini2025anastaars}.  Broad optimizer comparisons also caution that
+dimension and evaluation count do not rank variational methods by themselves
+\citep{bonetmonroig2023optimizers}.
+
+A graph-conditioned trust-region policy in the first preprint version (now
+superseded) transfers a pre-query search strategy across graph instances for
+standard $2p$-angle QAOA
+\citep{huynh2026gctr}; the present method is instead within-instance and seeks
+to reuse the $p(m+n)$-parameter ma-QAOA observable tangent geometry across a
+family of objective weights.  This distinction is the purpose of the
+cross-reference and is not evidence for the present method.
+
+\section{Results}
+\label{sec:results}
+
+\subsection{A task-weighted reusable tangent representation}
+
+For an orthonormal basis $Q\in\R^{d\times r}$ and projector
+$P=QQ^{\trans}$, the task-averaged gradient energy lost outside the basis is
+\begin{equation}
+ \E_w\norm{(\I-P)\nabla C_w(\bm\theta)}_2^2
+ =\norm{(\I-P)\J(\bm\theta)^{\trans}L}_F^2,
+ \qquad \M=\E[ww^{\trans}]=LL^{\trans}.
+ \label{eq:taskloss}
+\end{equation}
+Theorem~\ref{thm:taskweighted} shows that the leading left singular vectors of
+$\J^{\trans}L$ minimize this quantity.  This is stronger than using the
+unweighted row space when some observable combinations are common and others
+are irrelevant to the task distribution.  It is also explicitly local: the
+basis can rotate as $\bm\theta$ changes.
+
+We estimate $\M$ from eight training weight vectors.  Training and evaluation
+trajectories use independent random seeds and no evaluation weight enters the
+factor used by randomized QB.  They share a fixed per-graph low-rank weight
+model, which is exactly the assumed transfer relation.  Figure~\ref{fig:protocol}
+shows the separation and the falsification-aware audit.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/figure_amortized_protocol.pdf}
+\caption{\textbf{Task-weighted representation and evaluation boundary.}
+\textbf{a}, A fixed positive-weight model generates independent eight-task
+training and evaluation trajectories.  Only the training bank enters the
+empirical second moment and matrix-free operator; the learned basis is then
+used on the evaluation stream.  \textbf{b}, The task-weighted identity and its
+rank-constrained solution.  The exact development gate failed.  The finite-shot
+per-task result is directionally positive but inconclusive and uses
+simulator-assisted basis construction.}
+\label{fig:protocol}
+\end{figure}
+
+\subsection{The exact development gate fails under a matched SPSA audit}
+
+The exact-statevector pilot contains eight distinct graph topologies from
+random 3-regular and Erdos--Renyi families, $n\in\{8,10\}$.  Evaluating each
+topology at $p\in\{1,2\}$ gives 16 configured topology--depth analysis cells;
+the two depths reuse each topology.  Every cell contains eight evaluation
+tasks, and each method receives 40 SPSA steps per
+task.  Full and reduced SPSA therefore each use 648 scalar objective
+evaluations over a stream, except that the residual-gated method uses 28
+additional scalar evaluations for seven one-probe checks.
+
+Full SPSA obtains mean approximation ratio $0.8244\pm0.0230$, where uncertainty
+throughout this section is a descriptive two-standard-error summary over those
+16 cells, without modeling their cross-depth dependence.
+Residual-gated reuse obtains $0.8087\pm0.0237$.  Its paired difference is
+$-1.57\pm1.04$ percentage points.  The method therefore misses the
+prespecified no-worse-than-one-point condition, although it satisfies the
+forward-cost ceiling and the random-basis comparison.  The composite
+development gate is false.
+
+Per-task recycled refresh is the strongest reduced method in the exact pilot, with
+mean ratio $0.8136\pm0.0262$ and paired difference
+$-1.08\pm0.94$ points.  This is close to, but still below, the one-point
+development margin.  Because the margin and method were selected during
+development, neither result is a confirmatory equivalence test.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/figure_amortized_exact_audit.pdf}
+\caption{\textbf{Exact-statevector quality, cost and dimension audit.}
+\textbf{a}, Paired approximation-ratio differences from full SPSA; error bars
+are descriptive two-standard-error bars across 16 configured cells.  The pale band is the
+prespecified $[-1,0]$-point quality region, not a confidence region.
+\textbf{b}, Mean forward evaluations are partitioned into scalar-objective and
+vector-observable parameter points; simulator-only VJPs use the right axis and
+are not added to a hypothetical hardware query count.  \textbf{c}, Mean
+optimized dimension and refreshes per eight-task stream.}
+\label{fig:exactaudit}
+\end{figure}
 
 \begin{table}[t]
 \centering
-\caption{Claim--evidence ledger.  Each supported statement is paired with its
-verification path and the boundary beyond which it is not asserted.}
-\label{tab:ledger}
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{>{\raggedright\arraybackslash}p{0.27\textwidth}
-                >{\raggedright\arraybackslash}p{0.35\textwidth}
-                >{\raggedright\arraybackslash}p{0.31\textwidth}}
-\toprule
-Claim & Evidence & Boundary \\
-\midrule
-The scalar gradient is observable-active & Proposition~\ref{prop:gradient}; chain rule & Local and observable-dependent \\
-Discarded first-order change is controlled & Theorem~\ref{thm:loss}; true-residual assumption & No global convergence or ratio guarantee \\
-Depth-one compression has a small measured change & 18 paired runs aggregated to 14 topology clusters; Fig.~\ref{fig:tradeoff} & Not an equivalence test; exact simulation only \\
-Depth-two compression loses quality & 18 paired runs aggregated to 14 topology clusters; Fig.~\ref{fig:family} & Tested families and hyperparameters only \\
-The release is not query-advantaged & Instrumented counts; Fig.~\ref{fig:budget} & Counters are not additive shot costs \\
-\bottomrule
-\end{tabular}}
+\caption{\textbf{Exact-statevector development audit.} Ratio summaries are
+means $\pm$ descriptive two-standard-error summaries over 16 configured cells.
+Differences are paired within a cell before aggregation.  ``Obj.'' and ``Obs.'' are disjoint
+scalar-objective and vector-observable forward parameter points; VJPs are
+simulator-only reverse-mode actions and are reported separately.}
+\label{tab:exact}
+\scriptsize
+\resizebox{\textwidth}{!}{\input{tables/table_amortized_exact_audit.tex}}
 \end{table}
 
+\subsection{Controls are consistent with useful geometry, not operational advantage}
+
+The rank-8 random basis loses $11.62\pm1.69$ points relative to full SPSA.
+Residual-gated reuse exceeds that control by 10.05 points on average.  This gap
+is consistent with useful task-weighted geometry, but the random-basis control
+is not matched for refresh or construction cost and cannot isolate a causal
+geometric contribution.  A basis built
+once with no refresh loses $10.45\pm2.16$ points, which is consistent with loss
+of local-space validity over the warm-started stream.  Fixed refresh every
+two tasks loses $4.07\pm1.34$ points, and a Bernoulli random-refresh schedule
+loses $5.63\pm2.17$ points.  These lower-refresh controls also differ in cost,
+so they do not isolate refresh timing at a fixed budget.
+
+The residual gate does not demonstrate selective savings.  It checks each of
+the seven task transitions and triggers on 6.25 transitions on average, or
+89.3\% of opportunities.  Per-task refresh updates the recycled basis on all
+seven transitions.  The
+gated method reduces the mean optimized dimension from 36.19 to 6.61, but uses
+676 scalar-objective and 113.25 vector-observable forward evaluations, compared
+with 648 and zero for full SPSA.  Its total forward count is 789.25, or
+$1.218\times$ full SPSA, and construction uses a further 138.88 simulator-only
+VJPs.  Per-task refresh uses 776 forward evaluations and 153.50 VJPs.  These
+counts establish compression and a useful geometric control; they do not
+establish fewer queries, lower wall time or hardware deployability.
+
+Figure~\ref{fig:stream} shows that all structured methods improve as one task
+warm-starts the next, but the random basis remains far below the learned spaces.
+The gated refresh rate remains high across the stream.  A useful gate would
+need to predict when refreshing changes downstream performance, not merely
+produce a large finite-difference residual.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/figure_amortized_stream.pdf}
+\caption{\textbf{Task-stream dynamics.} \textbf{a}, Exact approximation ratio
+by evaluation-task index; bands are descriptive two-standard-error summaries
+across 16 configured cells.  The upward trend reflects warm-starting and does not
+constitute learning across independent graphs.  \textbf{b}, Fraction of units
+refreshed at each task.  Per-task refresh updates a recycled basis after every transition,
+the fixed schedule refreshes at tasks 2, 4 and 6, and the residual gate rarely
+avoids a refresh.}
+\label{fig:stream}
+\end{figure}
+
+\subsection{The finite-shot signal is unresolved and hybrid}
+
+We conduct a separate $p=2$ comparison with 256 computational-basis samples for
+each scalar objective evaluation, no readout error, and three measurement seeds.
+The seeds are nested repeats within each of eight graph topologies at $p=2$ and are
+averaged before uncertainty is calculated; they are not treated as 24
+independent graphs.  Full SPSA obtains mean ratio $0.8387\pm0.0376$.  The
+residual-gated method obtains $0.8353\pm0.0392$, a paired difference of
+$-0.33\pm1.67$ points.  Per-task refresh obtains $0.8448\pm0.0345$, a paired
+difference of $+0.61\pm1.57$ points.  The descriptive uncertainty is too large
+to motivate a directional claim; no formal directional or equivalence test was
+performed.
+
+This separate configuration is not a controlled noise ablation of the exact
+$p=2$ cells.  Initialization and optimizer seeds include the configuration's
+job index; removing the $p=1$ jobs changes that index for later cells.  The
+exact and shot summaries must therefore not be differenced as if they shared
+identical latent optimizer trajectories.
+
+The pilot is not an end-to-end finite-shot subspace method.  Shot sampling is
+used for SPSA objectives and gated residual calls, whereas every subspace build
+uses exact-statevector observable evaluations, finite-difference JVPs and
+reverse-mode VJPs.  Full SPSA and per-task refresh each use 165,888 scalar
+objective shots, but per-task refresh additionally uses 125 vector-observable
+parameter points and 150.92 simulator-only VJPs on average.  Gating uses 173,056
+objective shots because its residual checks add 28 scalar calls, plus 95.67
+exact vector-observable points and 120.42 simulator-only VJPs.  The recorded
+shot counts are therefore only the scalar-objective component of a hybrid
+simulator protocol, not a total hardware shot cost.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/figure_amortized_shot_audit.pdf}
+\caption{\textbf{Hybrid 256-shot development pilot.} \textbf{a}, Paired
+differences from full SPSA with descriptive two-standard-error bars over eight
+graph topologies.  \textbf{b}, Mean approximation ratios after averaging
+three measurement repeats within each topology.  \textbf{c}, Scalar-objective shots
+and simulator-only VJPs.  The latter have no assigned hardware-shot equivalent,
+so the bars do not close an end-to-end hardware resource ledger.}
+\label{fig:shot}
+\end{figure}
+
+\begin{table}[t]
+\centering
+\caption{\textbf{Hybrid 256-shot pilot.} Three measurement seeds are nested
+within each of eight graph topologies at $p=2$.  Ratios and paired differences are
+reported as mean $\pm$ two standard errors across those eight units.  Shots
+cover scalar objective and gate calls only; observable-map calls and VJPs used
+for basis construction remain exact and simulator-only.}
+\label{tab:shot}
+\scriptsize
+\resizebox{\textwidth}{!}{\input{tables/table_amortized_shot_audit.tex}}
+\end{table}
+
+\section{Discussion}
+
+The theorem gives a positive structural conclusion: for a specified weight
+second moment, its leading tangent directions minimize discarded local
+gradient energy.  Empirically, the learned subspace exceeds a random basis with
+the same maximum rank cap, but that control is not refresh- or cost-matched and hence does
+not causally isolate the geometry.  The representation also reduces the number
+of optimized coordinates by more than four fifths on this grid.  Neither
+statement is an operational advantage by itself.
+
+The matched audit rejects the stronger development hypothesis.  Full SPSA has
+the same two-evaluation-per-step property as reduced SPSA, and it avoids basis
+construction.  Gating adds objective calls and suppresses few rebuilds.  The
+exact quality deficit exceeds the prespecified one-point margin.  Per-task
+refresh comes closest to the full baseline, which suggests that local-space
+rotation, rather than randomized QB accuracy alone, is the main obstacle.  It
+also incurs the largest reverse-mode burden.
+
+The finite-shot pilot does not reverse this conclusion.  Its per-task mean is
+directionally above full SPSA, but eight graph topologies do not resolve the
+effect and the basis is still supplied by exact simulator sensitivities.  In
+particular, equal scalar-objective shots do not imply equal total quantum cost.
+All commuting MaxCut edge observables can be estimated from common bitstrings,
+but the number of shots required for a vector-observable JVP depends on the
+precision target, noise, compilation and estimator design.  Assigning a
+hardware conversion to an automatic-differentiation VJP would fabricate a cost
+model, so we leave it explicitly unconverted.
+
+A decisive next study should be locked before new outcomes are inspected.  A
+concrete confirmatory and hardware path is:
+\begin{enumerate}
+\item \textbf{Freeze the estimand.}  Use the paired difference in mean
+approximation ratio across topology--depth units, with a one-point equivalence
+margin.  Treat total physical shots and QPU time as co-primary cost outcomes.
+The observed exact paired standard deviation for gated reuse is 2.08 points;
+under a Gaussian zero-effect planning approximation, about 35 independent
+units provide 80\% power against a one-point margin.  A final power analysis
+should add attrition, family strata and multiplicity before locking the sample.
+\item \textbf{Test amortization directly.}  Evaluate task-bank sizes
+$K\in\{1,2,4,8,16,32\}$ with training and evaluation banks generated or
+collected independently.  Report the break-even task count using all
+construction, refresh and optimization resources.
+\item \textbf{Make construction hardware-native.}  Replace simulator VJPs with
+a specified forward-only or parameter-shift estimator; allocate shots to every
+scalar and vector-observable circuit point; and record compiled two-qubit gates,
+circuit batches, queue time and wall time.  The current hybrid pilot is not a
+substitute for this step.
+\item \textbf{Retain matched controls.}  Compare full-space SPSA, no refresh,
+fixed refresh, gated refresh, random refresh, per-task recycled refresh and a
+rank-8 random basis under the same maximum rank cap at matched optimizer and
+total-resource budgets.  Add a
+gate-oracle analysis that asks whether each refresh improves the subsequent
+task, then calibrate the residual against that event.
+\item \textbf{Stress the assumed task model.}  Include unseen graph families,
+larger $n$ and $p$, full-rank or changepoint weight streams, device noise and at
+least one real backend.  Report failures by stratum rather than averaging them
+away.
+\end{enumerate}
+Passing this protocol would support an amortized hardware-efficiency claim.
+The present experiments do not.
+
 \section{Methods}
-\label{sec:methods}
 
-\subsection{Observable-space formulation}
-\label{sec:formulation}
+\subsection{Multi-angle QAOA and vector observables}
 
-Let $G=(V,E)$ be an unweighted graph and let
-$C_e=(I-Z_iZ_j)/2$ for $e=(i,j)$.  A depth-$p$ ma-QAOA state is
+For an undirected graph $G=(V,E)$ and edge $e=(i,j)$, define
+$C_e=(I-Z_iZ_j)/2$.  A depth-$p$ ma-QAOA state is
 \begin{equation}
  |\psi(\bm\theta)\rangle=
  \prod_{\ell=1}^{p}
  \left[\prod_{i\in V}e^{-i\beta_{\ell i}X_i}
  \prod_{e\in E}e^{-i\gamma_{\ell e}C_e}\right]
- |+\rangle^{\otimes |V|}.
+ |+\rangle^{\otimes n}.
  \label{eq:state}
 \end{equation}
-Define the vector of local observables
+The parameter vector contains $p(m+n)$ real angles.  The observable map and its
+Jacobian are
 \begin{equation}
- F(\bm\theta)=
- \big(\langle\psi(\bm\theta)|C_e|\psi(\bm\theta)\rangle\big)_{e\in E}
- \in\R^{m}, \qquad m=|E|,
-\end{equation}
-and its Jacobian
-\begin{equation}
- \J(\bm\theta)=\frac{\partial F}{\partial\bm\theta}
- \in\R^{m\times d}.
+ F(\bm\theta)=\big(\langle\psi(\bm\theta)|C_e|\psi(\bm\theta)\rangle\big)_{e\in E},
+ \qquad
+ \J(\bm\theta)=\frac{\partial F}{\partial\bm\theta}\in\R^{m\times d}.
  \label{eq:jacobian}
 \end{equation}
-For edge weights $w\in\R^m$, the expected cut is
-$C(\bm\theta)=w^{\mathsf T}F(\bm\theta)$.
+For positive edge weights $w$, the objective is
+$C_w(\bm\theta)=w^{\trans}F(\bm\theta)$ and
+$\nabla C_w=\J^{\trans}w$ by the chain rule.
 
-\begin{proposition}[The local objective gradient is active]
-\label{prop:gradient}
-At every differentiable point,
+\subsection{Task-weighted optimality theorem}
+
+\begin{theorem}[Optimal task-weighted local parameter subspace]
+\label{thm:taskweighted}
+Let $w\in\R^m$ be square-integrable with second moment
+$\M=\E[ww^{\trans}]=LL^{\trans}$.  Fix a differentiable anchor
+$\bm\theta$ with Jacobian $\J\in\R^{m\times d}$ and set
+$A=\J^{\trans}L$.  For any $Q\in\R^{d\times r}$ with
+$Q^{\trans}Q=I$ and $P=QQ^{\trans}$,
 \begin{equation}
- \nabla C(\bm\theta)=\J(\bm\theta)^{\mathsf T}w
- \in \operatorname{range}(\J(\bm\theta)^{\mathsf T}).
+ \E\norm{(\I-P)\nabla C_w(\bm\theta)}_2^2
+ =\norm{(\I-P)A}_F^2.
+ \label{eq:identity}
 \end{equation}
-Consequently, the steepest first-order change of any weighted sum of the chosen
-observables lies in the parameter-space row span of $\J$.
-\end{proposition}
+If $A=U\Sigma V^{\trans}$, the projector
+$P_r=U_rU_r^{\trans}$ onto its leading $r$ left singular vectors minimizes
+Eq.~\eqref{eq:identity} over all rank-$r$ orthogonal projectors, with minimum
+$\sum_{j>r}\sigma_j(A)^2$.
+\end{theorem}
 \begin{proof}
-Writing $C(\bm\theta)=\sum_{e=1}^{m}w_eF_e(\bm\theta)$, its $j$th
-partial derivative is
-$\partial_j C=\sum_e w_e\partial_jF_e$.  The $j$th component of
-$\J^{\mathsf T}w$ is the same sum.  Hence
-$\nabla C=\J^{\mathsf T}w$, which belongs to the range of
-$\J^{\mathsf T}$ by construction.
+Because $\nabla C_w=\J^{\trans}w$ and $\I-P$ is symmetric and idempotent,
+\begin{align*}
+ \E\norm{(\I-P)\J^{\trans}w}_2^2
+ &=\operatorname{tr}\!\left[(\I-P)\J^{\trans}\M\J(\I-P)\right]\\
+ &=\operatorname{tr}\!\left[(\I-P)AA^{\trans}(\I-P)\right]
+ =\norm{(\I-P)A}_F^2.
+\end{align*}
+The Eckart--Young--Mirsky theorem, or equivalently the Ky Fan maximum
+principle applied to $\operatorname{tr}(PAA^{\trans})$, gives the optimal
+rank-$r$ projector and the discarded singular-value sum.
 \end{proof}
 
-This statement is local.  The row space may rotate as optimization moves, which
-is why a fixed subspace can fail even if it is exact at its construction point.
-It also gives an algebraic ceiling
+For a training bank $\W\in\R^{K\times m}$ whose rows are task weights, the
+implementation uses
 \begin{equation}
- \operatorname{rank}(\J)\leq \min(m,d).
- \label{eq:rankceiling}
+ \widehat\M=\frac{1}{K}\W^{\trans}\W=LL^{\trans},
+ \qquad L=\frac{1}{\sqrt K}\W^{\trans}.
+ \label{eq:empiricalmoment}
 \end{equation}
-For the observable choice used here, $m$ does not grow with QAOA depth while
-$d=p(m+n)$ does.  Depth can therefore increase the compressible complement even
-without additional numerical singular-value decay.
+The theorem then holds exactly for the empirical training distribution.  It
+does not guarantee transfer to a different evaluation distribution, global
+optimization convergence, or preservation after the anchor moves.
 
-\subsection{Randomized Subspace QAOA}
-\label{sec:method}
+\subsection{Matrix-free construction and objective-conditioned refresh}
 
-\subsubsection{Matrix-free sensitivity actions}
-
-At an anchor $\bm\theta_0$, RSQ exposes two actions without materializing
-$\J$:
-\begin{align}
- \operatorname{jvp}(v)&=\J(\bm\theta_0)v,\\
- \operatorname{vjp}(u)&=\J(\bm\theta_0)^{\mathsf T}u.
-\end{align}
-The implementation evaluates the VJP by reverse-mode automatic differentiation.
-It evaluates a JVP either by automatic differentiation or by the central
-finite difference
+Randomized QB accesses $A=\J^{\trans}L$ through
 \begin{equation}
- \J v = \frac{F(\bm\theta_0+h v)-F(\bm\theta_0-h v)}{2h}+O(h^2),
- \label{eq:fd}
+ A v=\J^{\trans}(Lv),
+ \qquad
+ A^{\trans}u=L^{\trans}(\J u),
+ \label{eq:actions}
 \end{equation}
-with $h=10^{-4}$.  The released tests compare both actions to a dense Jacobian
-and verify the adjoint identity.
+using a simulator VJP for the first action and a central-finite-difference JVP
+for the second.  The development configuration uses maximum rank 8, block size
+2, relative tolerance 0.10, six norm probes and four residual probes.  A build
+can stop at tolerance or at the available rank; its status, convergence flag
+and residual are persisted in the result CSV.  A refresh seeds QB with the
+current basis but permits the resulting span to
+rotate.
 
-\subsubsection{Adaptive basis and residual diagnostics}
-
-RSQ factors $A=\J^{\mathsf T}$ as $A\approx \Q B$, where
-$\Q\in\R^{d\times r}$ has orthonormal columns and
-$B=\Q^{\mathsf T}A$.  Randomized QB expands $\Q$ in blocks until an estimated
-relative residual falls below $\varepsilon$ or the algebraic rank ceiling is
-reached; the return value distinguishes these stopping conditions.  We expose a Frobenius indicator
-and a power-iteration spectral indicator, following established randomized
-matrix-free approximation \citep{halko2011finding,yu2018randqb,musco2015randomized}.  The optimization
-variables are $z\in\R^r$ with
+For task $w_t$ at current $\bm\theta$, the gate estimates the relative omitted
+objective-gradient energy.  For Gaussian direction $v$ it computes central
+differences along $v$ and $(\I-P)v$.  With $s$ probes,
 \begin{equation}
- \bm\theta=\bm\theta_0+\Q z.
- \label{eq:reduced}
+ \widehat\rho^2=
+ \frac{\sum_{j=1}^{s}
+ [D_{(\I-P)v_j}C_{w_t}(\bm\theta)]^2}
+ {\sum_{j=1}^{s}[D_{v_j}C_{w_t}(\bm\theta)]^2}.
+ \label{eq:gate}
 \end{equation}
+Each probe requires four scalar objective evaluations.  Its numerator and
+denominator separately estimate squared gradient norms under exact directional
+derivatives, but their ratio is not unbiased and one probe is not a calibrated
+confidence bound.  The exact pilot uses $s=1$, finite-difference step 0.01 and
+refresh threshold 0.30.  The finite-shot pilot uses step 0.10 to reduce noise
+amplification.  The gate is therefore an operational heuristic, not a theorem.
 
-Every $K=25$ steps, RSQ evaluates the residual at the current point.  If the
-relative residual exceeds $\varepsilon_{\mathrm{refresh}}=0.05$, it reanchors.
-A naive recycled implementation can freeze: if the old basis already has the
-maximum requested rank, no new column can enter even when the residual is
-large.  Our update instead permits a temporary augmented basis, adds current
-residual directions, and takes the singular value decomposition of the small
-coefficient matrix $B$.  Rotating by its leading left singular vectors returns
-the best requested-rank basis available in the augmented space.  This step is
-both implemented and regression tested.
+The refresh controls are: one initial build only (no refresh); rebuild at tasks
+2, 4 and 6 (fixed); check and rebuild above threshold at tasks 1--7 (gated);
+refresh a recycled basis for every task (per-task); independent refresh
+probability 0.35 at each
+transition (random); and one isotropic Gaussian orthonormal basis of maximum
+rank 8 with no sensitivity construction (random basis).
 
-The implementation records the step and value of every randomized residual
-check, every triggered refresh, the retained-rank trajectory, and forward,
-JVP and VJP counts separately.  It returns both the final iterate used by the
-released tables and the best objective value observed along the trajectory.
-This distinction prevents a user-facing deployment from silently discarding a
-better intermediate point while preserving the final-iterate convention of the
-paired experiment.
+\subsection{Matched full and reduced SPSA}
 
-\subsubsection{Forward-only construction, refresh and optimization}
-
-The forward-only variant selects an $r$-dimensional trial space by applying JVPs
-to a Gaussian parameter sketch and solving the resulting small Rayleigh--Ritz
-problem.  Its refresh diagnostic also uses only JVPs.  For independent
-$v_i\sim\mathcal N(0,I_d)$, define
+For either native parameters or reduced coordinates $z$ with
+$\bm\theta=\bm\theta_0+Qz$, SPSA uses a Rademacher vector $\delta_k$ and
 \begin{equation}
- \widehat\rho_F^2=
- \frac{\sum_{i=1}^{s}\norm{\J(\I-\projector)v_i}^2}
-      {\sum_{i=1}^{s}\norm{\J v_i}^2}.
- \label{eq:forwarddiagnostic}
-\end{equation}
-Forward differences evaluate both numerator and denominator actions.  The identity
-$\E\norm{Mv}^2=\norm{M}_F^2$ implies that the numerator and denominator
-converge to the corresponding squared Frobenius norms as $s$ grows.  We use
-$s=12$.  Unlike a spectral indicator, Eq.~\eqref{eq:forwarddiagnostic}
-controls average discarded sensitivity; a missed worst direction remains a
-failure mode.
-
-Reduced optimization also avoids reverse-mode access.  For
-$L(z)=-C(\bm\theta_0+\Q z)$ and a Rademacher vector
-$\delta_t\in\{-1,1\}^r$, it uses
-\begin{equation}
- \widehat g_t=
- \frac{L(z_t+c\delta_t)-L(z_t-c\delta_t)}{2c}\,\delta_t,
- \qquad c=10^{-4}.
+ \widehat g_k=
+ \frac{C( x_k+c_k\delta_k)-C(x_k-c_k\delta_k)}{2c_k}\,\delta_k,
  \label{eq:spsa}
 \end{equation}
-If $L$ has bounded third derivatives, Taylor expansion and
-$\E[\delta_{ti}\delta_{tj}]=\mathbf{1}\{i=j\}$ give
-$\E[\widehat g_t\mid z_t]=\nabla L(z_t)+O(c^2)$
-componentwise \citep{spall1992spsa}.  To leading order, its $i$th component is
-\begin{equation}
- \widehat g_{ti}=\partial_iL(z_t)
- +\sum_{j\neq i}\partial_jL(z_t)\delta_{ti}\delta_{tj}+O(c^2),
- \label{eq:spsa-leading}
-\end{equation}
-so a single noiseless estimate has
-$\operatorname{Var}(\widehat g_{ti}\mid z_t)
-=\sum_{j\neq i}(\partial_jL(z_t))^2+O(c^2)$: decreasing $c$ removes leading
-finite-difference bias but not the cross-coordinate perturbation variance.
-If the two objective evaluations instead have independent, zero-mean errors of
-variance $\sigma^2$, their contribution to each component variance is
-$\sigma^2/(2c^2)$.  Shot noise therefore creates the usual bias--variance
-trade-off; correlated sampling, repeated perturbations, and a scheduled $c$
-may help, but require a separate analysis.  The released exact-statevector
-experiment has $\sigma^2=0$.  Equation~\eqref{eq:spsa} costs two objective
-evaluations independently of $r$, but it is not an exact gradient, and the
-finite run supplies no asymptotic SPSA convergence claim.
+where $x_k$ denotes $\bm\theta_k$ or $z_k$.  We use 40 steps,
+$a_k=0.12/(k+1+5)^{0.602}$,
+$c_k=0.10/(k+1)^{0.101}$, one perturbation average, and maximum update norm
+0.40.  One final evaluation gives $2\times40+1=81$ scalar objective calls per
+task and 648 per eight-task stream.  The highest observed candidate becomes
+the warm start for the next task.  Full and reduced methods share the same
+initial angle and seed schedule, although their perturbation vectors live in
+different dimensions.
 
-\begin{proposition}[Moment identity for the forward residual diagnostic]
-\label{prop:residual-moments}
-Let $P=\projector$, let $R=\J(\I-P)$, and let
-$v_1,\ldots,v_s$ be independent standard Gaussian
-vectors.  For
-\begin{equation}
- \widehat a_s=\frac{1}{s}\sum_{i=1}^{s}\norm{Rv_i}^{2},
-\end{equation}
-we have
-\begin{equation}
- \E[\widehat a_s]=\norm{R}_F^2,
- \qquad
- \operatorname{Var}(\widehat a_s)
- =\frac{2}{s}\norm{R^{\mathsf T}R}_F^2.
- \label{eq:residual-moments}
-\end{equation}
-The analogous identities hold for the denominator of
-Eq.~\eqref{eq:forwarddiagnostic} with $R$ replaced by $\J$.
-\end{proposition}
-\begin{proof}
-Set $H=R^{\mathsf T}R$.  For a standard real Gaussian vector $v$,
-$\E[vv^{\mathsf T}]=\I$, so
-$\E[v^{\mathsf T}Hv]=\operatorname{tr}(H)=\norm{R}_F^2$.
-Isserlis' identity gives
-$\E[(v^{\mathsf T}Hv)^2]=\operatorname{tr}(H)^2+2\operatorname{tr}(H^2)$;
-therefore its variance is
-$2\operatorname{tr}(H^2)=2\norm{R^{\mathsf T}R}_F^2$.
-The $s$ summands are independent, so the variance of their mean is divided by
-$s$.  Replacing $R$ by $\J$ proves the denominator statement.
-\end{proof}
+\subsection{Weight streams and graph design}
 
-Proposition~\ref{prop:residual-moments} justifies the diagnostic as a consistent
-randomized estimator.  The following result states what can be concluded at a
-finite probe count without assuming a stable rank.
+For each graph, a seeded model draws a positive base vector and an orthonormal
+loading matrix of latent rank 3.  A latent AR(1) process with persistence 0.85
+and innovation scale 0.18 perturbs the weights through those loadings.  Values
+are clipped below at 0.10 and each task vector is normalized to mean one, so
+objective scale cannot masquerade as optimizer improvement.  The training and
+evaluation streams use different seeds but the same base and loading model.
+This is a controlled synthetic transfer setting, not a claim about naturally
+occurring task distributions.
 
-\begin{proposition}[Finite-probe confidence envelope]
-\label{prop:probe-envelope}
-Let $a=\norm{R}_F^2>0$, $b=\norm{\J}_F^2>0$, and let
-$\widehat\rho_F=(\widehat a_s/\widehat b_s)^{1/2}$ be formed from Gaussian
-quadratic-form averages as in Eq.~\eqref{eq:forwarddiagnostic}.  For
-$\delta\in(0,1)$ set $t=2/\sqrt{s\delta}$.  If $t<1$, then, with probability at
-least $1-\delta$,
-\begin{equation}
- \sqrt{\frac{1-t}{1+t}}\,\widehat\rho_F
- \leq \frac{\norm{R}_F}{\norm{\J}_F}
- \leq
- \sqrt{\frac{1+t}{1-t}}\,\widehat\rho_F.
- \label{eq:probe-envelope}
-\end{equation}
-\end{proposition}
-\begin{proof}
-For either quadratic-form average, Proposition~\ref{prop:residual-moments} and
-$\norm{M^{\mathsf T}M}_F^2\leq\norm{M}_F^4$ give relative variance at most
-$2/s$.  Chebyshev's inequality with radius $t$ fails with probability at most
-$2/(st^2)=\delta/2$ for each of numerator and denominator.  A union bound makes
-both relative bounds simultaneous.  Taking the worst ratio and then a square
-root yields Eq.~\eqref{eq:probe-envelope}.
-\end{proof}
+The exact grid contains random 3-regular and Erdos--Renyi graphs with edge
+probability 0.5, $n\in\{8,10\}$, graph seeds 41 and 42, and
+$p\in\{1,2\}$.  It contains eight graph topologies and 16 configured
+topology--depth analysis cells; depths reuse topology.  The finite-shot grid
+retains $p=2$, hence eight graph topologies and eight cells.  Brute-force weighted
+MaxCut supplies the denominator of each approximation ratio.  A complex-128
+PyTorch statevector backend supplies the exact observable map
+\citep{paszke2019pytorch}.
 
-The envelope is intentionally conservative.  At the released $s=12$ and
-$95\%$ confidence, $t>1$, so it is non-informative: the observed ratio is a
-refresh diagnostic, not a run-wise confidence certificate.  More than 80
-probes are required before this elementary $95\%$ envelope is finite, and a
-usefully tight interval requires substantially more.  The ratio is not
-unbiased, no finite probe count gives a deterministic upper bound, and central
-finite differences add the $O(h^2)$ error of Eq.~\eqref{eq:fd}.  Accordingly,
-Theorem~\ref{thm:loss} is conditional on the true operator residual.
+\subsection{Exact and shot evaluators}
 
-\begin{proposition}[True-relative-residual bridge]
-\label{prop:residual-gradient}
-Let $P=\projector$ be an orthogonal projector and suppose
-$\norm{\J(\bm\theta)}_F>0$.  Define the true relative Frobenius residual
-\begin{equation}
- \rho_F(\bm\theta,P)=
- \frac{\norm{\J(\bm\theta)(\I-P)}_F}{\norm{\J(\bm\theta)}_F}.
- \label{eq:true-relative-residual}
-\end{equation}
-For $C=w^{\mathsf T}F$ and $g=\nabla C(\bm\theta)$,
-\begin{equation}
- \norm{g-Pg}
- \leq \rho_F(\bm\theta,P)\norm{\J(\bm\theta)}_F\norm{w}.
- \label{eq:gradient-residual-bridge}
-\end{equation}
-\end{proposition}
-\begin{proof}
-Proposition~\ref{prop:gradient}, symmetry of $P$, and $P^2=P$ give
-$(\I-P)g=[\J(\I-P)]^{\mathsf T}w$.  Hence
-\begin{align*}
- \norm{g-Pg}
- &\leq \norm{\J(\I-P)}_2\norm{w}\\
- &\leq \norm{\J(\I-P)}_F\norm{w}
- =\rho_F\norm{\J}_F\norm{w}.
-\end{align*}
-\end{proof}
+The exact evaluator returns statevector expectations.  The shot evaluator
+samples computational-basis bitstrings from the same statevector and computes
+all commuting edge observables from each bitstring.  The pilot uses 256 shots
+per scalar objective call and zero readout error.  Measurement and SPSA seeds
+are separate.  Candidate selection is based on the sampled objective, but the
+reported primary approximation ratio is the exact statevector expectation at
+the selected candidate.  This post-evaluation makes optimizer comparisons
+less noisy but further distinguishes the pilot from a hardware-only workflow.
 
-Proposition~\ref{prop:residual-gradient} is the bridge from the true relative
-quantity approximated by Eq.~\eqref{eq:forwarddiagnostic} to an objective-level
-statement.  Substituting the finite-probe ratio for $\rho_F$ is not justified
-without an accompanying probabilistic envelope.
+Subspace construction does not call the shot evaluator.  It uses exact
+observable-map calls, finite-difference JVPs and automatic-differentiation
+VJPs.  Thus ``256-shot pilot'' describes its scalar objective path only.
 
-\subsubsection{Local consequences of a true residual bound}
+\subsection{Resource ledger}
 
-\begin{theorem}[True-residual projected-step discrepancy]
-\label{thm:loss}
-Let $P=\projector$ and suppose
-$\norm{\J(\bm\theta)(\I-P)}_2\leq\varepsilon$.  Let $C=w^{\mathsf T}F$ be twice
-continuously differentiable on a convex neighborhood containing the segments
-from $\bm\theta$ to both $\bm\theta+\Delta$ and $\bm\theta+P\Delta$, and suppose
-$\norm{\nabla^2 C(\xi)}_2\leq L_C$ throughout that neighborhood.  Then
-\begin{equation}
- \left|C(\bm\theta+\Delta)-C(\bm\theta+P\Delta)\right|
- \leq \norm{w}\,\varepsilon\norm{\Delta}+L_C\norm{\Delta}^2.
- \label{eq:lossbound}
-\end{equation}
-\end{theorem}
-\begin{proof}
-Taylor's theorem gives
-$C(\bm\theta+\Delta)=C(\bm\theta)+\nabla C(\bm\theta)^{\mathsf T}\Delta+r_1$
-with $|r_1|\leq L_C\norm{\Delta}^2/2$, and the analogous expansion along
-$P\Delta$ has $|r_2|\leq L_C\norm{P\Delta}^2/2\leq
-L_C\norm{\Delta}^2/2$.  Proposition~\ref{prop:gradient} makes the linear
-difference $w^{\mathsf T}\J(\bm\theta)(\I-P)\Delta$.  Cauchy--Schwarz and the
-assumed operator-norm residual bound give magnitude at most
-$\norm{w}\varepsilon\norm{\Delta}$.  Adding $|r_1|+|r_2|$ proves the claim.
-\end{proof}
-
-The theorem does not give global convergence or an approximation-ratio
-guarantee.  It states exactly what a true residual bound controls: the
-first-order change discarded at the current anchor.
-
-\begin{theorem}[One exact projected-gradient ascent step]
-\label{thm:projected-ascent}
-Let $P=\projector$, let $g=\nabla C(\bm\theta)$, and suppose $\nabla C$ is
-$L$-Lipschitz on the segment from $\bm\theta$ to
-$\bm\theta^+=\bm\theta+\alpha Pg$, with $L>0$ and $0<\alpha\leq1/L$.
-Then
-\begin{equation}
- C(\bm\theta^+)\geq C(\bm\theta)
- +\alpha\left(1-\frac{L\alpha}{2}\right)\norm{Pg}^2
- \geq C(\bm\theta)+\frac{\alpha}{2}\norm{Pg}^2.
- \label{eq:projected-ascent}
-\end{equation}
-If $\norm{\J(\bm\theta)}_F>0$, the omitted gradient component additionally
-satisfies Eq.~\eqref{eq:gradient-residual-bridge}.
-\end{theorem}
-\begin{proof}
-The smoothness inequality applied to
-$s=\bm\theta^+-\bm\theta=\alpha Pg$ gives
-\begin{align*}
- C(\bm\theta+s)
- &\geq C(\bm\theta)+g^{\mathsf T}s-\frac{L}{2}\norm{s}^2\\
- &=C(\bm\theta)+\alpha\norm{Pg}^2
-   -\frac{L\alpha^2}{2}\norm{Pg}^2,
-\end{align*}
-where $g^{\mathsf T}Pg=\norm{Pg}^2$ because $P$ is an orthogonal projector.
-The first inequality in Eq.~\eqref{eq:projected-ascent} follows; the step-size
-condition gives the second.  The final statement is
-Proposition~\ref{prop:residual-gradient}.
-\end{proof}
-
-Theorem~\ref{thm:projected-ascent} is deliberately a one-step result for exact
-projected-gradient ascent with a fixed projector.  The released two-sided path
-uses Adam, the forward-only path feeds the estimator in Eq.~\eqref{eq:spsa} to
-Adam, and both paths may replace $P$ after a randomized residual check.  The
-theorem is therefore not a convergence guarantee for Adam, SPSA, finite-probe
-residual estimates, or a moving randomized basis.
-
-\paragraph{Algorithm.}
-The implemented loop is:
-\begin{enumerate}
-\item construct $\Q$ at $\bm\theta_0$ to tolerance $\varepsilon$ or the rank
-ceiling, and record the stopping status;
-\item update $z$ for the objective $-C(\bm\theta_0+\Q z)$, using Adam for the
-two-sided path or a two-evaluation Rademacher SPSA estimate for the forward-only
-path \citep{kingma2015adam,spall1992spsa};
-\item every $K$ steps, estimate the current residual;
-\item when it exceeds threshold, reanchor, augment and recompress the recycled
-basis, reset $z$, and continue.
-\end{enumerate}
-Standalone observable evaluations, JVPs and VJPs are instrumented as overlapping
-categories; ranks, residual checks and refreshes are recorded separately.
-
-\subsection{Access and computational complexity}
-
-Let $r$ be the retained rank, $b$ the QB block size, $q$ the number of expansion
-blocks, $s_0$ the initial norm-probe count and $s$ the residual-probe count.
-Ignoring pruning, the Frobenius two-sided build uses
-$s_0+(q+1)s+qb$ VJPs and $qb$ JVPs.  A two-sided refresh of an existing rank-$r$
-basis uses $r$ JVPs to form its coefficient matrix and $2s$ VJPs for the residual
-ratio.  This describes the diagnostic itself; a triggered rebuild incurs its
-own norm probes, residual probes, coefficient updates and any expansion blocks.
-The forward-only build uses $k=\min(d,r+\text{oversampling})$ JVPs; a standalone
-forward-only residual check uses $2s$ JVPs.  A central-difference JVP costs two
-observable-map evaluations.  Each forward-only SPSA optimization step uses two
-objective evaluations, followed by one final-iterate evaluation at the end of
-the run.  These exact
-categories are emitted in the released CSV; they overlap and must not be added
-as if they were disjoint physical-shot costs.
-
-For the bundled exact simulator, one observable-map evaluation takes
-$O(p(m+n)2^n)$ arithmetic and stores $O((m+1)2^n)$ numbers because all per-edge
-cut indicators are precomputed.  This backend is a small-instance reference, not
-a large-scale simulator.  On hardware, one computational-basis sample can update
-all commuting MaxCut edge observables, but shot complexity depends on the desired
-joint precision and noise model; neither a shot bound nor a circuit-depth
-advantage is claimed here.  The matrix-free callback interface permits external
-backends without changing the QB core.
-
-\subsection{Experimental protocol}
-\label{sec:experiments}
-
-We test unweighted MaxCut on three graph families: random 3-regular graphs,
-Erdos--Renyi graphs with edge probability $0.5$, and rings.  The grid contains
-$n\in\{8,10\}$, $p\in\{1,2\}$, and three restart identifiers: 36 paired
-optimizer runs.  Random regular and Erdos--Renyi generation yields 12 distinct
-graphs; the two rings repeat across restart identifiers, giving 14 unique
-topologies and 28 topology--depth clusters.  Graph generation, angle
-initialization and randomized linear algebra use separately recorded seeds
-($0$--$2$, $100000$--$100002$, and $200000$--$200002$, respectively).  A
-canonical edge list and SHA-256-derived graph identifier accompany every row.
-The simulator is a pure-PyTorch, complex-128 statevector implementation
-\citep{paszke2019pytorch}; an optional PennyLane backend supplies an independent
-cross-check \citep{bergholm2018pennylane}.  Brute-force MaxCut gives the exact
-denominator for the approximation ratio.
-
-Every optimizer receives 100 steps at learning rate $0.05$.  Full ma-QAOA,
-the fixed-rank oracle and both randomized variants share the same run-specific
-initial angle vector.  The symmetry baseline begins at its orbit-wise mean
-projection, so it is derived from the same vector while satisfying its tying
-constraints.  Adam is used except for the forward-only SPSA update
-\citep{kingma2015adam,spall1992spsa}.  We
-compare:
+Every task emits cumulative and task-local counts for:
 \begin{itemize}
-\item full ma-QAOA;
-\item angles tied by graph-automorphism orbits;
-\item a rank-8 dense-SVD oracle fixed at the initial Jacobian (its materialization
-is recorded separately rather than disguised as a matrix-free action);
-\item two-sided adaptive RSQ at $\varepsilon\in\{10^{-1},10^{-2}\}$;
-\item forward-only rank-8 RSQ.
+\item scalar objective parameter points;
+\item vector-observable parameter points;
+\item computational-basis shots used by the evaluator;
+\item sensitivity JVPs and simulator-only VJPs;
+\item subspace builds, residual checks and triggered refreshes.
 \end{itemize}
-The primary outcome is expected-cut approximation ratio.  Parameter count is
-the dimension optimized after construction.  Paired differences subtract the
-full ma-QAOA ratio on the same graph, initialization and sketch identifier.
-Repeated restarts of an identical topology are averaged within each
-topology--depth cluster before analysis.  We report the mean and sample standard
-deviation across 14 cluster means per depth for raw ratios, and the mean $\pm$
-two standard errors across the corresponding paired cluster means.  These are
-descriptive summaries, not independent-instance hypothesis tests; no absence of
-significance is interpreted as equivalence.
+Scalar-objective and vector-observable points are non-overlapping, and their sum
+is reported as forward circuit evaluations.  JVP is an operation-level counter
+whose underlying finite-difference points are already represented by
+vector-observable evaluations; it is not added again.  A VJP is recorded in a
+separate simulator-only category because no physical circuit conversion is
+assumed.  Builds, checks and refreshes are events rather than circuit costs.
+This ledger prevents double counting while preserving implementation detail.
 
-\section{Results}
-\label{sec:results}
+\subsection{Analysis and development criterion}
 
-\subsection{Depth one: compression with a small paired change}
+For each method and topology--depth cell we average approximation ratio across
+the eight sequential tasks.  In the finite-shot pilot, the three measurement
+repeats are first averaged within the same cell.  Paired differences subtract
+full SPSA in the same cell.  We report means and $2s/\sqrt N$, where $s$ is the
+sample standard deviation of cell summaries.  In the exact pilot, the 16 cells
+reuse eight topologies across two depths and their dependence is not modeled.
+The resulting two-standard-error bars are descriptive, not formal confidence
+intervals, independent-sample uncertainty estimates or equivalence tests.
 
-At $p=1$, full ma-QAOA optimizes $23.7$ parameters on average and attains
-$0.862\pm0.053$.  RSQ at $\varepsilon=10^{-2}$ optimizes $14.7$ parameters, a
-$39.1\%$ reduction, and attains $0.867\pm0.051$.  The paired change is
-$+0.48\pm0.94$ percentage points.  The two-standard-error bar spans zero, but
-the experiment was not designed as a formal equivalence trial; this grid does
-not resolve a directional average change at depth one.
+The development-only gate requires residual-gated reuse to (i) have paired
+mean difference at least $-0.01$ relative to full SPSA, (ii) exceed a random
+basis with the same maximum rank cap, and (iii) use at most $1.25\times$ the
+mean forward circuit evaluations of full SPSA.  Because hyperparameters and this criterion
+were examined on the development grid, a fresh locked dataset is required for
+confirmatory inference.
 
-The rank-8 fixed-subspace oracle reaches $0.764\pm0.051$, a paired change of
-$-9.77\pm2.09$ points.  Forward-only rank-8 RSQ reaches
-$0.798\pm0.055$, improving on the fixed oracle but remaining
-$6.39\pm1.98$ points below full ma-QAOA.  The comparison is consistent with a
-benefit from a moving subspace, but it does not isolate refresh from differences
-in construction and optimization.
+\subsection{Protocol integrity and reproducibility}
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.96\linewidth]{figures/figure1_tradeoff.pdf}
-\caption{Compression--quality frontier.  Horizontal coordinates are optimized
-parameter reduction relative to full ma-QAOA.  Vertical coordinates are paired
-approximation-ratio changes; error bars show two standard errors.  The main RSQ
-point at $p=1$ approaches the zero-change line, whereas stronger compression and
-depth two expose a larger quality cost.}
-\label{fig:tradeoff}
-\end{figure}
+Configuration, the complete transitive \texttt{rsqaoa} Python source tree, the
+runner, the analyzer and protocol metadata are SHA-256 hashed before execution.
+The frozen exact and finite-shot protocol hashes begin
+\texttt{86641437f696} and \texttt{f17516bb20c6}, respectively; both result
+files record implementation hash \texttt{fe49dff72483}.  Randomized-QB build
+JSON, stop reason, convergence flag and residual are persisted on build rows.
+Row-level ledgers sum exactly to their final cumulative values.  The complete
+regeneration path is:
+\begin{verbatim}
+python experiments/freeze_amortized_protocol.py
+python experiments/run_amortized.py
+python experiments/analyze_amortized.py
+python experiments/make_amortized_paper_assets.py
+python -m pytest tests -q
+python run.py validate
+\end{verbatim}
+The figure/table script does not rerun experiments.  It validates CSV/JSON row
+counts and protocol hashes, nests measurement repeats, and writes a manifest
+containing source and display hashes.
 
-\subsection{Depth two: the failure boundary becomes visible}
+\subsection{Use of generative artificial intelligence}
 
-At $p=2$, full ma-QAOA optimizes $47.4$ parameters on average and attains
-$0.945\pm0.044$.  RSQ optimizes the same $14.7$-dimensional observable-controlled
-subspace as at depth one, now a $69.6\%$ reduction.  At tolerance $10^{-2}$ its
-ratio is $0.897\pm0.054$, a paired change of $-4.77\pm2.47$ points.  The added
-layer grows the ambient parameter space without growing the observable count,
-but the more aggressive compression no longer preserves the full optimizer's
-quality.
-
-The forward-only rank-8 variant loses $14.73\pm2.65$ points at depth two.  The
-fixed rank-8 oracle loses $18.07\pm2.54$ points.  These results rule out a blanket
-claim that a very small initial sensitivity space is sufficient for ma-QAOA.
-They do not identify which component of the moving-subspace pipeline causes the
-difference and may indicate a need for richer observables at higher depth.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.90\linewidth]{figures/figure2_family.pdf}
-\caption{Paired quality change for RSQ at $\varepsilon=0.01$, separated by graph
-family.  Bars show means and error bars show two standard errors.  The
-depth-two loss is present across all three tested families; wide intervals on
-some families reflect the small released grid.}
-\label{fig:family}
-\end{figure}
-
-\subsection{The residual indicator identifies algebraic, not extra numerical, rank}
-
-Across the tested tolerances, two-sided RSQ retains $14.7$ directions on average,
-the average number of edge observables.  Tightening the tolerance from $0.1$ to
-$0.01$ does not change the mean retained rank, although the paired quality
-summaries differ modestly.  Five of 144 builds at tolerance $0.01$ and three of
-144 builds at tolerance $0.1$ reached the algebraic rank ceiling before their
-finite-probe indicator met the requested tolerance.  Thus this benchmark
-does not show additional numerical low-rank decay beyond the algebraic ceiling
-in Eq.~\eqref{eq:rankceiling}.  What grows with depth is the complement between
-$m$ and $d$, not a newly discovered decay of the nonzero spectrum.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.90\linewidth]{figures/figure4_rank.pdf}
-\caption{Ambient ma-QAOA dimension and residual-controlled RSQ rank, averaged across graph
-families and seeds.  The observable count controls the retained dimension while
-the ambient parameter count doubles with depth.}
-\label{fig:rank}
-\end{figure}
-
-\subsection{Setup cost prevents a query-efficiency claim}
-
-At the primary tolerance $0.01$, the two-sided method averages 749 forward-$F$
-evaluations, 134 JVPs, and 481 VJPs at $p=1$, compared with 101 forward
-evaluations and 100 VJPs for the full baseline under the simulator's accounting.
-At $p=2$ the corresponding RSQ counts increase to 867, 155, and 556.  The
-forward-only path uses no VJP, as intended, but requires about 488--489 forward
-evaluations and 143--144 JVPs.
-These categories are instrumentation counters, not additive physical-shot
-counts; a JVP by central difference contains forward evaluations already
-recorded by the lower-level counter.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.92\linewidth]{figures/figure3_operator_budget.pdf}
-\caption{Mean instrumented operator counts.  Categories are shown separately
-and are not additive.  On these small exact simulators, subspace discovery and
-refresh cost more operator applications than direct full-space optimization.}
-\label{fig:budget}
-\end{figure}
-
-\begin{table}[t]
-\centering
-\caption{Released benchmark: 36 paired runs on 14 unique topologies and 28
-topology--depth clusters.  Approximation ratios are mean $\pm$ sample standard
-deviation across cluster means.  Paired changes are relative to full ma-QAOA on
-the same run and are mean $\pm$ two standard errors across paired cluster means.}
-\label{tab:summary}
-\resizebox{\textwidth}{!}{\input{tables/table1_summary}}
-\end{table}
-
-\section{Discussion}
-
-The experiments support a narrower and more useful conclusion than the original
-resource-efficiency hypothesis.  At depth one, the observable row space removes
-roughly two fifths of the optimized coordinates with little resolved change in
-mean quality.  At depth two, the same observable dimension removes roughly seven
-tenths of the coordinates but loses about five approximation-ratio points.
-Parameter compression is therefore real, while quality preservation is
-depth-dependent.
-
-The fixed-rank oracle underperforms the adaptive pipeline, which is consistent
-with a local row space that changes along the trajectory.  That comparison does
-not, however, isolate the refresh gate: basis construction, rank, and optimizer
-also differ.  Moreover, 324 of 324 scheduled residual checks across the two
-tolerances and the forward-only variant exceeded the threshold and triggered a
-rebuild.  The experiment therefore
-evaluates a periodically refreshed implementation; it does not show that the
-gate saved rebuilds or selected better refresh times.  A matched-rank comparison
-among no-refresh, fixed-schedule, and threshold-gated variants is needed to
-identify that effect.  The regression suite separately checks that recycling a
-saturated basis can rotate rather than freezing its old span.
-
-The forward-only path establishes feasibility but not parity.  It avoids every
-VJP, including during refresh, and outperforms the equally sized fixed oracle.
-Its remaining quality loss can arise from restricting the Rayleigh--Ritz search
-to a random trial space, finite-difference error, single-perturbation SPSA
-variance, and the use of an average Frobenius drift diagnostic.  Because the
-released objectives are exact statevector expectations, they do not test the
-$1/c^2$ measurement-noise amplification in the SPSA estimator.  Hardware studies
-should compare larger sketches, common-random-number shot estimators, repeated
-perturbations, gain schedules, and worst-direction forward indicators.
-
-For the fixed scalar objective $C=w^{\mathsf T}F$ used here, the weight vector
-$w$ is known and a single VJP returns $\J^{\mathsf T}w=\nabla C$ directly.
-Constructing a basis for the larger range of $\J^{\mathsf T}$ therefore has no
-demonstrated single-objective gradient-query benefit.  Such a basis could be
-amortized across multiple weight vectors, objectives or related instances, but
-the released benchmark tests none of those use cases.  Likewise, the
-two-evaluation SPSA cost in Eq.~\eqref{eq:spsa} is independent of reduced rank,
-but ordinary full-space SPSA also uses two objective evaluations per step.  A
-full-space SPSA baseline is absent, so the forward-only results establish
-parameter-space compression and zero-VJP execution, not an objective-query
-advantage.
-
-Most importantly, fewer optimized coordinates do not automatically mean fewer
-quantum queries.  The released small-instance counts go in the opposite
-direction because basis construction is expensive.  A genuine query advantage
-would require amortizing a basis across related instances, using hardware-native
-batching, or reaching a scale at which full-gradient cost grows faster than the
-matrix-free sketch.  Those are testable future conditions, not conclusions of
-the present data.
+OpenAI Codex assisted with software implementation, analysis and manuscript
+drafting under the author's supervision.  The author inspected and verified
+the code, numerical results, statistical summaries and scientific claims and
+remains fully accountable for the work.
 
 \section{Limitations}
 
-The benchmark contains only 36 paired runs on 14 unique topologies,
-$n\leq10$, depths one and two, and exact statevector objectives.  It does not
-model shot noise, device noise,
-compilation, queue latency, or weighted spin glasses.  The graph families are
-standard but narrow.  One hundred optimizer steps may favor some parameterizations
-over others, and no hyperparameter sweep is used to optimize each baseline
-separately.  For the fixed-rank oracle, dense-Jacobian materialization is
-included in wall time and recorded as a separate event, but no hardware-query
-equivalent is assigned; it is therefore primarily a quality reference.  The
-randomized residual ratios are finite-
-probe estimators and can underestimate the true residual; no deterministic or
-run-wise coverage guarantee is claimed for the chosen probe count.  All 324 of
-324 released refresh checks triggered, so no empirical saving from residual gating is
-established.  The projected-ascent theorem does not cover the Adam or SPSA
-updates used in the experiment, and the exact-statevector setting does not test
-shot-noise bias--variance trade-offs.  The study also omits multi-weight
-amortization and a full-space SPSA control, both required to test the two
-potential query-saving mechanisms described above.  Finally, the observable vector contains
-per-edge costs; adding mixer observables, commutators, or layer-resolved features
-could raise rank but improve high-depth fidelity.
+The exact pilot has eight graph topologies, two small sizes, depths one and two,
+two graph families and a synthetic rank-3 task model.  It is a development
+grid, not a locked test.  Its descriptive error bars use 16 configured
+topology--depth cells without modeling the reuse of each topology across depth.
+The task second moment is estimated from only eight training weights.  Each
+topology--depth cell has one seeded training bank and one evaluation trajectory;
+shot repeats vary measurements, not task streams.  Generalization over stream
+realizations is therefore not separately identified from graph variation.
+Hyperparameters are not independently tuned for each control.  Warm-started
+tasks are dependent within a stream.
 
-\section{Reproducibility}
+The residual estimate uses one Gaussian probe and is not calibrated.  The
+randomized-QB stop status and residual are persisted, but its four-probe
+residual indicator is randomized rather than a confidence certificate.  The
+randomized basis has maximum rank 8, and quality may change under larger ranks,
+different observable dictionaries or dense-oracle construction.  The theorem
+is local and makes no statement about SPSA convergence, finite-difference bias
+or basis rotation.  The exact simulator stops at $n=10$ and does not test
+large-scale statevector, tensor-network or QPU execution.
 
-The canonical package is the root-level \texttt{rsqaoa/} directory.  A clean
-environment can install and verify it from the repository root with
-\begin{verbatim}
-python -m pip install -e '.[dev]'
-python -m pytest tests -q
-python run.py experiment \
-  --config experiments/configs/maxcut_small.yaml
-python run.py summarize
-python run.py validate
-\end{verbatim}
-The experiment runner writes 216 CSV rows and records separate graph,
-initialization and sketch seeds; canonical edge lists and graph hashes; complete
-objective trajectories and final parameters; every residual value, refresh
-step and basis-build status; deterministic-thread settings; environment versions;
-and SHA-256 fingerprints of the implementation, experiment runner and effective
-configuration.  The
-summarizer reads only that CSV and regenerates the four figures, Table
-\ref{tab:summary}, and a machine-readable JSON summary.  Tests cover the
-statevector against a dense reference, JVP/VJP consistency, fixed-tolerance
-factorization, spectral residual estimation, basis recycling, the forward-only
-zero-VJP invariant, best-iterate and residual-audit reporting, invalid-control
-rejection, baselines, the command-line JSON contract, and the optional
-PennyLane cross-check.  No test-count claim is hard-coded because collection
-varies with optional backends.
+The finite-shot pilot has eight graph topologies and no device noise.  Its
+configuration-dependent job indices change initialization and optimizer seeds
+relative to the exact grid, so it is not a controlled noise comparison.  Only
+scalar objective calls are sampled; subspace construction and primary
+post-evaluation remain exact-statevector operations.  Its shot count is
+therefore incomplete as a hardware ledger.  No claim is made about quantum
+advantage, QPU speed, wall-clock reduction, asymptotic scaling, Pareto-front
+quality or deployment.
 
 \section{Data and code availability}
 
-The row-level CSV, machine-readable summary, generated tables and figure source
-data are included with the accompanying repository.  The JSON summary records
-the CSV SHA-256 digest, protocol, sampling units, environment, refresh audit,
-and hashes of all generated display artifacts.  The canonical Python source,
-tests and exact regeneration commands are released under the MIT License in the
-same repository.  No external or restricted dataset is used.  This working
-release does not yet have an archival DOI; a versioned repository release should
-be deposited before formal submission.
+No external dataset is used.  The accompanying
+\href{https://github.com/thmolena/Randomized-Subspace-QAOA}{GitHub repository}
+contains the
+row-level exact and finite-shot CSV files, machine-readable summaries, frozen
+protocols, configurations, plotting/table script, generated display manifest,
+source package and tests.  Code is released under the MIT License.  The current
+repository release has no archival DOI; a versioned deposit should accompany
+any formal journal submission.
+
+\section{Author contributions}
+
+M.H. conceived the study, developed the method and software, designed and ran
+the experiments, analyzed and visualized the results, and wrote and revised the
+manuscript.
+
+\section{Competing interests}
+
+The author declares no competing interests.
+
+\section{Correspondence}
+
+Correspondence should be addressed to Molena Huynh
+(\texttt{molena.huynh@jmp.com}).
 
 \section{Conclusion}
 
-RSQ turns the local observable Jacobian of ma-QAOA into an adaptive optimization
-space without forming the Jacobian.  Its residual has a precise role: the true
-operator residual bounds discarded first-order sensitivity, while its randomized
-estimate decides when the space is updated.  On the released benchmark, this mechanism preserves depth-one quality
-under substantial parameter compression, reveals a depth-two compression--quality
-tradeoff, and carries nontrivial setup cost.  These findings establish a
-fact-checkable baseline for future randomized-subspace quantum optimization and
-define the evidence required before stronger query-efficiency claims are made.
+Task-distribution-weighted observable tangent spaces give a precise local
+answer to which ma-QAOA directions matter across a family of scalarized
+objectives.  The matched audit gives an equally precise empirical boundary.
+On the present exact grid, the learned subspace exceeds a random basis in an
+unmatched comparison but remains below full SPSA and costs more forward
+evaluations; the residual
+gate rarely avoids refreshing.  The directionally positive finite-shot
+per-task result is unresolved and depends on exact simulator sensitivities.
+The correct conclusion is therefore not query efficiency, but a reusable
+representation whose operational case remains unproven.  The released controls,
+ledger and confirmatory path make that case falsifiable.
 
 {\small
 \bibliographystyle{plainnat}

@@ -116,11 +116,18 @@ def validate_release(csv_path: Path, summary_path: Path, paper_path: Path) -> di
                     f"generated PDF contains volatile date metadata: {artifact}")
 
     manuscript = (paper_path / "main.tex").read_text()
+    legacy_claims_path = paper_path / "legacy_evidence_claims.tex"
+    if not legacy_claims_path.is_file():
+        raise ValueError(
+            "missing generated legacy evidence claims: "
+            f"{legacy_claims_path}"
+        )
+    legacy_claims = legacy_claims_path.read_text()
     readme = (repository / "README.md").read_text()
     homepage = (repository / "index.html").read_text()
     generated_table = (paper_path / "tables/table1_summary.tex").read_text()
     for context, text in [
-        ("paper/main.tex", manuscript),
+        ("paper/legacy_evidence_claims.tex", legacy_claims),
         ("paper/tables/table1_summary.tex", generated_table),
     ]:
         if "$+-" in text:
@@ -138,12 +145,17 @@ def validate_release(csv_path: Path, summary_path: Path, paper_path: Path) -> di
         f"{summary['n_unique_topologies']} unique topologies",
     ]
     for claim in generated_claims:
-        _require(manuscript, claim, "paper/main.tex")
+        _require(
+            legacy_claims, claim, "paper/legacy_evidence_claims.tex"
+        )
 
     audits = summary["refresh_audit"]
     total_checks = sum(item["n_residual_checks"] for item in audits.values())
     total_refreshes = sum(item["n_triggered_refreshes"] for item in audits.values())
-    _require(manuscript, f"{total_refreshes} of {total_checks}", "paper/main.tex")
+    _require(
+        legacy_claims, f"{total_refreshes} of {total_checks}",
+        "paper/legacy_evidence_claims.tex",
+    )
 
     p1_af = summary["p1:rsq_adjoint_free:none"]
     p2_af = summary["p2:rsq_adjoint_free:none"]
