@@ -4,40 +4,50 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](pyproject.toml)
 
-Residual-controlled active-subspace optimization for multi-angle QAOA.
+Task-distribution-weighted observable tangent spaces for repeated multi-angle
+QAOA, with matched optimizer controls and physical measurement accounting.
 
-Multi-angle QAOA uses `d = p(|E| + |V|)` parameters. RSQ treats the Jacobian of
-the per-edge observable vector as a matrix-free operator, builds a low-dimensional
-parameter-space basis with randomized QB, optimizes only inside that basis, and
-refreshes it when a randomized residual diagnostic detects drift. A separate
-forward-only path uses finite-difference Jacobian-vector products and zero
-vector-Jacobian products.
+For a vector of edge observables `F(theta)`, task weights `w`, Jacobian `J`, and
+task second moment `M = E[ww^T] = LL^T`, the leading left singular vectors of
+`J^T L` minimize expected discarded local gradient energy at a fixed anchor.
+The package constructs this representation matrix-free, separates basis-training
+weights from evaluation trajectories, and audits no-refresh, fixed, gated,
+per-task, random-refresh, random-basis, and full-space SPSA controls.
 
-The released result is parameter compression, not quantum-query advantage. The
-grid contains 36 paired exact-statevector MaxCut runs on 14 unique graph
-topologies (28 topology-depth clusters). At tolerance `0.01`, two-sided RSQ
-reduces optimized dimension by 39.1% at depth one with a paired approximation-
-ratio change of `+0.48 +/- 0.94` percentage points (mean `+/- 2SE` across 14
-cluster means). At depth two, the reduction is 69.6% with a
-`-4.77 +/- 2.47` point change. Forward-only rank-8 RSQ compresses by 64.7% and
-82.3%, with changes of `-6.39 +/- 1.98` and `-14.73 +/- 2.65` points. All 324
-of 324 scheduled residual checks triggered rebuilding. Instrumented setup cost
-exceeds full-space optimization on these small simulators.
+The result is presently a falsified operational hypothesis, not an efficiency
+claim. Across 16 exact-statevector topology-depth cells from eight graphs,
+residual-gated reuse changes mean approximation ratio by `-1.57 +/- 1.04`
+percentage points and uses `1.218x` the forward circuit points of full SPSA.
+It therefore fails the prespecified development gate. In a separate hybrid
+256-shot objective pilot, per-task refresh changes the mean by
+`+0.61 +/- 1.57` points, but subspace construction still uses exact simulator
+observables and VJPs. Neither result supports hardware, query, wall-time, or
+quantum advantage.
 
 - [Manuscript](paper/main.pdf) · [LaTeX source](paper/main.tex)
 - [Project page](https://thmolena.github.io/Randomized-Subspace-QAOA/)
-- [Installable package](rsqaoa/) · [Released rows](experiments/results/maxcut_small.csv)
+- [Installable package](rsqaoa/) · [Exact rows](experiments/results/amortized_development.csv) · [Hybrid shot rows](experiments/results/amortized_shot_development.csv)
 
 ## Claims and verification paths
 
 | Supported statement | Evidence | Reproduction path | Boundary |
 | --- | --- | --- | --- |
-| The scalar weighted-cut gradient lies in the observable Jacobian row space | Chain-rule proposition | `paper/main.tex`, Proposition 1; `test_dense_jacobian_consistency` | Local and observable-dependent |
-| A true residual controls discarded first-order change | Conditional Taylor bound | `paper/main.tex`, Theorem 1 | No global convergence or approximation-ratio guarantee |
-| Finite probes estimate the Frobenius residual ratio | Moment identity and Chebyshev envelope | `paper/main.tex`, Propositions 2--3; `residual_ratio_confidence` | Released 12-probe envelope is not run-wise informative at 95% confidence |
-| Depth-one compression has a small measured change | 18 paired runs aggregated into 14 topology clusters | [`summary.json`](experiments/results/summary.json); Fig. 1 | Not a formal equivalence trial |
-| Depth-two compression exposes a failure boundary | 18 paired runs aggregated into 14 topology clusters | [`summary.json`](experiments/results/summary.json); Figs. 1--2 | `n <= 10`, tested families and optimizer only |
-| The method is not query-advantaged in the released regime | Instrumented forward/JVP/VJP counts | Fig. 4 and [released rows](experiments/results/maxcut_small.csv) | Counters are separate, not additive shot costs |
+| The leading subspace of `J^T L` is locally optimal for a declared task second moment | Trace identity and Eckart-Young-Ky Fan argument | `paper/main.tex`, Theorem 1; `test_task_weighted_basis_matches_dense_reference` | Local; no optimizer convergence claim |
+| Training and evaluation weights are disjoint | Independent recorded seeds and hashes | Frozen protocols and every result row | Same synthetic weight model is shared |
+| Residual-gated reuse fails the exact development gate | Matched full/reduced SPSA over 16 configured cells | [`amortized_development_summary.json`](experiments/results/amortized_development_summary.json) | Development data; eight unique topologies |
+| The finite-shot signal is unresolved and hybrid | Three nested measurement repeats on eight graphs | [`amortized_shot_development_summary.json`](experiments/results/amortized_shot_development_summary.json) | Basis construction and final scoring remain exact |
+| One bitstring batch can evaluate all task weights at one circuit point | Shared-observable covariance identity and tested API | `shared_task_objectives`; `test_physical_accounting.py` | Cannot merge task-specific parameter trajectories |
+| A fresh confirmatory decision is specified before execution | Design-only 40-topology plan and validator | `python experiments/validate_nmi_design.py` | Not registered, not code-complete, and not executable |
+
+### Earlier fixed-objective benchmark
+
+The repository retains the original fixed-objective development grid for
+auditability: 36 paired runs on 14 unique topologies, with 39.1% and 69.6%
+dimension reduction at depths one and two and paired changes of
+`+0.48 +/- 0.94` and `-4.77 +/- 2.47` points. The forward-only reductions were
+64.7% and 82.3%. All 324 of 324 scheduled checks triggered rebuilding. These
+numbers are historical development evidence and are not the primary evidence
+for the task-weighted manuscript.
 
 ## Install
 
@@ -72,6 +82,33 @@ released rows, and full experiment grid remain repository artifacts rather than
 wheel contents.
 
 ## Quickstart
+
+For repeated tasks, estimate all task objectives from one bitstring batch at
+the same circuit point:
+
+```python
+import torch
+from rsqaoa import MaxCutProblem, graphs
+from rsqaoa.amortized import ShotEvaluator, shared_task_objectives
+
+problem = MaxCutProblem(6, graphs.ring(6), p=1)
+theta = problem.random_theta(generator=torch.Generator().manual_seed(0))
+weights = torch.stack([
+    torch.ones(problem.m),
+    torch.linspace(0.5, 1.5, problem.m),
+])
+evaluator = ShotEvaluator(problem, shots=1024, seed=1)
+batch = shared_task_objectives(evaluator, theta, weights)
+
+print(batch.values)
+print(batch.circuit_points, batch.shots)  # 1, 1024
+```
+
+This reuse is valid only because every scalarization is evaluated at the same
+`theta`. It cannot merge bitstring batches after task optimizers follow
+different parameter trajectories.
+
+The original one-objective RSQ API remains available:
 
 ```python
 from rsqaoa import MaxCutProblem, graphs, optimize_rsq
@@ -160,10 +197,18 @@ embedded in the installable wheel:
 
 ```bash
 python -m pip install -e ".[dev]"
-python run.py experiment --config experiments/configs/maxcut_small.yaml
-python run.py summarize
+python experiments/analyze_amortized.py
+python experiments/make_amortized_paper_assets.py
+python experiments/validate_nmi_design.py
 python run.py validate
 ```
+
+The design validator reports `execution_ready: false`. The 40-topology
+confirmatory plan has not been externally registered, its full runner and
+coordinate-gradient controls are incomplete, and no hardware stage has been
+run. `python experiments/validate_nmi_design.py --require-executable` therefore
+fails intentionally rather than generating outcomes under a retrospective
+protocol.
 
 The exact environment used for the committed grid is recorded in every CSV row
 and in [`reproduction-environment.yml`](experiments/reproduction-environment.yml).
@@ -204,11 +249,24 @@ second package implementation or nested build configuration to keep
 synchronized. Future package-index artifacts should be built from the
 repository root.
 
-## Scope and extension points
+## Current scope and extension points
+
+- The task-weighted theorem is local and conditional on a specified weight
+  second moment. It does not imply global optimization convergence.
+- The exact repeated-task grid uses eight unique graph topologies at `n <= 10`
+  and depths one and two. Its development gate fails.
+- The 256-shot pilot samples scalar objectives only; basis construction and
+  final scoring remain exact and simulator-assisted.
+- `shared_task_objectives` correctly reuses one bitstring batch across weights
+  at an identical parameter vector. It does not merge diverged task trajectories.
+- The confirmatory design is not registered, code-complete, or executable.
+  Hardware evidence, larger instances, full-rank/OOD task streams, matched
+  coordinate-gradient controls, and calibrated gating remain future work.
+
+### Earlier fixed-objective package extension points
 
 - The statevector backend is exponentially expensive and intended for small
-  validation studies. `MaxCutProblem` accepts weights, but the released grid is
-  unweighted.
+  validation studies. The earlier fixed-objective grid is unweighted.
 - `indicator="spec"` gives a worst-direction power-iteration diagnostic;
   `indicator="fro"` gives an average-sensitivity diagnostic.
 - Every optimization result exposes final and best-observed iterates, residual
@@ -222,8 +280,8 @@ repository root.
 - The current grid triggered 108/108 checks for each two-sided tolerance and
   108/108 forward-only checks; it does not establish savings from the gate.
 - For the released fixed objective, one VJP with known edge weights returns the
-  scalar gradient directly. A reusable observable subspace could be amortized
-  across weights, objectives, or related instances, but that use case is untested.
+  scalar gradient directly. The newer repeated-task pilot tests amortization,
+  but does not establish an operational advantage.
 - Full-space SPSA also uses two objective evaluations per step. Because the
   release has no full-space SPSA baseline, the forward-only path demonstrates
   zero-VJP execution and compression, not an objective-query advantage.
@@ -234,8 +292,8 @@ repository root.
 
 ```bibtex
 @article{huynh2026rsqaoa,
-  title  = {Randomized Subspace QAOA: Residual-Controlled
-            Active-Subspace Optimization for Multi-Angle QAOA},
+  title  = {Task-distribution-weighted observable tangent spaces
+            for repeated multi-angle QAOA: A matched resource audit},
   author = {Huynh, Molena},
   year   = {2026}
 }

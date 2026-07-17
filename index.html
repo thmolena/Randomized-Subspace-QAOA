@@ -3,30 +3,30 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Randomized Subspace QAOA | Residual-Controlled Active-Subspace Optimization</title>
-  <meta name="description" content="Randomized Subspace QAOA is a matrix-free, residual-gated method for compressing multi-angle QAOA optimization into an adaptive active subspace." />
+  <title>Task-weighted observable tangent spaces | Repeated multi-angle QAOA audit</title>
+  <meta name="description" content="A task-distribution-weighted tangent representation for repeated multi-angle QAOA, evaluated with matched SPSA controls and explicit physical-resource boundaries." />
   <meta name="theme-color" content="#0b2524" />
   <meta name="color-scheme" content="light" />
   <meta name="robots" content="index,follow,max-image-preview:large" />
   <link rel="canonical" href="https://thmolena.github.io/Randomized-Subspace-QAOA/" />
 
   <meta property="og:type" content="article" />
-  <meta property="og:site_name" content="Randomized Subspace QAOA" />
+  <meta property="og:site_name" content="Task-weighted observable tangent spaces" />
   <meta property="og:url" content="https://thmolena.github.io/Randomized-Subspace-QAOA/" />
-  <meta property="og:title" content="Randomized Subspace QAOA" />
-  <meta property="og:description" content="Residual-controlled, matrix-free active-subspace optimization for multi-angle QAOA, with released source data and explicit claim boundaries." />
-  <meta property="og:image" content="https://thmolena.github.io/Randomized-Subspace-QAOA/paper/figures/figure1_tradeoff.png" />
-  <meta property="og:image:alt" content="Compression and approximation-ratio evidence for Randomized Subspace QAOA" />
+  <meta property="og:title" content="Task-weighted observable tangent spaces for repeated multi-angle QAOA" />
+  <meta property="og:description" content="A matched audit: the exact residual-gated method misses its quality condition and costs more forward evaluations than full SPSA." />
+  <meta property="og:image" content="https://thmolena.github.io/Randomized-Subspace-QAOA/paper/figures/figure_amortized_exact_audit.png" />
+  <meta property="og:image:alt" content="Matched quality, cost, and dimension audit for repeated multi-angle QAOA" />
 
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Randomized Subspace QAOA" />
-  <meta name="twitter:description" content="Residual-controlled, matrix-free active-subspace optimization for multi-angle QAOA." />
-  <meta name="twitter:image" content="https://thmolena.github.io/Randomized-Subspace-QAOA/paper/figures/figure1_tradeoff.png" />
-  <meta name="twitter:image:alt" content="Compression and approximation-ratio evidence for Randomized Subspace QAOA" />
+  <meta name="twitter:title" content="Task-weighted observable tangent spaces" />
+  <meta name="twitter:description" content="Repeated multi-angle QAOA with matched SPSA controls and explicit measurement accounting." />
+  <meta name="twitter:image" content="https://thmolena.github.io/Randomized-Subspace-QAOA/paper/figures/figure_amortized_exact_audit.png" />
+  <meta name="twitter:image:alt" content="Matched quality, cost, and dimension audit for repeated multi-angle QAOA" />
 
-  <meta name="citation_title" content="Randomized Subspace QAOA: Residual-Controlled Active-Subspace Optimization for Multi-Angle QAOA" />
+  <meta name="citation_title" content="Task-distribution-weighted observable tangent spaces for repeated multi-angle QAOA: a matched resource audit" />
   <meta name="citation_author" content="Huynh, Molena" />
-  <meta name="citation_publication_date" content="2026-07-15" />
+  <meta name="citation_publication_date" content="2026-07-16" />
   <meta name="citation_pdf_url" content="https://thmolena.github.io/Randomized-Subspace-QAOA/paper/main.pdf" />
 
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
@@ -45,9 +45,9 @@
   {
     "@context": "https://schema.org",
     "@type": "ScholarlyArticle",
-    "headline": "Randomized Subspace QAOA: Residual-Controlled Active-Subspace Optimization for Multi-Angle QAOA",
+    "headline": "Task-distribution-weighted observable tangent spaces for repeated multi-angle QAOA: a matched resource audit",
     "author": {"@type": "Person", "name": "Molena Huynh"},
-    "datePublished": "2026-07-15",
+    "datePublished": "2026-07-16",
     "url": "https://thmolena.github.io/Randomized-Subspace-QAOA/",
     "encoding": {
       "@type": "MediaObject",
@@ -64,9 +64,9 @@
 
   <header class="site-header">
     <nav class="site-nav" aria-label="Primary navigation">
-      <a class="brand" href="#top" aria-label="Randomized Subspace QAOA home">
+      <a class="brand" href="#top" aria-label="Task-weighted observable tangent spaces home">
         <span class="brand-mark" aria-hidden="true">R/S</span>
-        <span>Randomized Subspace QAOA</span>
+        <span>Task-weighted RSQ</span>
       </a>
       <div class="nav-links">
         <a href="#method">Method</a>
@@ -80,19 +80,19 @@
   <main id="main-content" tabindex="-1">
     <section class="hero section-shell fade-in" aria-labelledby="page-title">
       <div class="hero-copy">
-        <p class="eyebrow">Matrix-free · residual-gated · reproducible</p>
-        <h1 id="page-title">Randomized Subspace <span>QAOA</span></h1>
-        <p class="paper-title">Residual-Controlled Active-Subspace Optimization for Multi-Angle QAOA</p>
+        <p class="eyebrow">Repeated objectives · matched controls · auditable cost</p>
+        <h1 id="page-title">Task-weighted observable <span>tangent spaces</span></h1>
+        <p class="paper-title">For repeated multi-angle QAOA: a matched resource audit</p>
         <p class="authors">Molena Huynh</p>
         <p class="venue">Preprint · 2026</p>
         <p class="summary">
-          Randomized Subspace QAOA turns the local observable sensitivity of
-          multi-angle QAOA into a smaller optimization space. Matrix-free operator
-          actions build the space, a randomized residual estimate tests whether it
-          remains adequate, and recycled refreshes let the basis rotate as the
-          optimizer moves. Released experiments show substantial parameter
-          compression at depth one with a small paired quality change, and they
-          expose both the quality loss and setup cost that appear at depth two.
+          Repeated objectives on one graph share a local observable-sensitivity
+          geometry. The leading left singular vectors of
+          \(J(\theta)^{\mathsf T}L\) optimally retain expected local gradient
+          energy for a declared task-weight distribution. The released matched
+          audit does not turn that representation into an efficiency claim:
+          residual-gated reuse is \(1.57\pm1.04\) percentage points below full
+          SPSA and uses \(1.218\times\) its forward evaluations.
         </p>
         <div class="button-row">
           <a class="button primary" href="paper/main.pdf">Read the paper</a>
@@ -102,31 +102,31 @@
         <dl class="scope-strip" aria-label="Evidence scope">
           <div>
             <dt>Evidence</dt>
-            <dd>Exact-statevector CPU study</dd>
+            <dd>Exact and hybrid finite-shot development pilots</dd>
           </div>
           <div>
             <dt>Supported claim</dt>
-            <dd>Parameter compression</dd>
+            <dd>Local representation theorem and failed matched gate</dd>
           </div>
           <div>
             <dt>Not claimed</dt>
-            <dd>Hardware or quantum-query advantage</dd>
+            <dd>Hardware, query, or wall-time advantage</dd>
           </div>
         </dl>
       </div>
 
       <div class="hero-visual">
         <div class="equation-card" aria-label="Matrix-free low-rank factorization">
-          <span class="equation-label">LOCAL SENSITIVITY MAP</span>
-          <div class="equation">\(J(\theta)^{\mathsf T}\approx QB\)</div>
-          <p>Probe the operator. Retain active directions. Recheck as the iterate moves.</p>
+          <span class="equation-label">TASK-WEIGHTED LOCAL MAP</span>
+          <div class="equation">\(J(\theta)^{\mathsf T}L\approx QB\)</div>
+          <p>Learn from a training task bank. Audit on a disjoint evaluation stream.</p>
         </div>
         <figure class="hero-figure">
-          <img src="paper/figures/figure4_rank.png"
-               width="1398" height="895"
-               alt="Ambient multi-angle QAOA dimension and residual-controlled active rank"
+          <img src="paper/figures/figure_amortized_protocol.png"
+               width="1982" height="898"
+               alt="Leakage-resistant task-bank training and evaluation protocol"
                decoding="async" fetchpriority="high" />
-          <figcaption>Ambient parameter dimension and the active rank selected by the released residual-controlled procedure.</figcaption>
+          <figcaption>The task distribution is estimated from training weights; evaluation weights remain disjoint.</figcaption>
         </figure>
       </div>
     </section>
@@ -134,34 +134,34 @@
     <section class="section section-shell fade-in" id="problem" aria-labelledby="problem-title">
       <div class="section-index" aria-hidden="true">01 / Problem</div>
       <div class="section-heading">
-        <p class="eyebrow">Why compress?</p>
-        <h2 id="problem-title">Multi-angle QAOA creates a growing search space</h2>
+        <p class="eyebrow">Why a task distribution?</p>
+        <h2 id="problem-title">Repeated objectives share observable sensitivity</h2>
       </div>
       <div class="split-panel">
         <div>
           <p>
-            Standard depth-\(p\) QAOA shares two angles per layer. Multi-angle
-            QAOA assigns one phase parameter to each cost term and one mixer
-            parameter to each qubit, so the search dimension grows as
+            Multi-angle QAOA assigns one phase parameter to each cost term and
+            one mixer parameter to each qubit, so the search dimension grows as
             \[
               d=p\bigl(|E|+|V|\bigr).
             \]
-            The additional coordinates help only when they produce independent
-            changes in measurable observables.
+            On one graph, repeated tasks can change only the edge-weight vector
+            \(w\). Their local gradients are \(J(\theta)^{\mathsf T}w\), so a
+            declared distribution over weights identifies which parameter
+            directions recur.
           </p>
         </div>
         <div>
           <p>
-            For the per-edge expectation vector \(F(\theta)\), its Jacobian
-            \(J(\theta)=\partial F/\partial\theta\) maps parameter perturbations
-            to observable changes. For any edge-weight vector \(w\),
+            If \(M=\mathbb E[ww^{\mathsf T}]=LL^{\mathsf T}\), the leading left
+            singular vectors of \(J^{\mathsf T}L\) minimize expected discarded
+            squared local-gradient energy:
             \[
-              \nabla C(\theta)=J(\theta)^{\mathsf T}w,
+              \mathbb E\|(I-QQ^{\mathsf T})J^{\mathsf T}w\|^2
+              =\|(I-QQ^{\mathsf T})J^{\mathsf T}L\|_F^2.
             \]
-            so the local objective gradient lies in the row space of \(J\).
-            Because \(\operatorname{rank}(J)\leq\min(|E|,d)\), observable space
-            supplies an algebraic compression ceiling even as depth enlarges the
-            ambient parameter space.
+            This statement is local. It does not guarantee optimizer convergence,
+            transfer to a new task distribution, or operational savings.
           </p>
         </div>
       </div>
@@ -196,56 +196,49 @@
     <section class="section section-shell fade-in" id="method" aria-labelledby="method-title">
       <div class="section-index" aria-hidden="true">03 / Method</div>
       <div class="section-heading">
-        <p class="eyebrow">Adaptive active subspaces</p>
-        <h2 id="method-title">Build, optimize, and refresh without forming the Jacobian</h2>
+        <p class="eyebrow">Training-bank geometry</p>
+        <h2 id="method-title">Estimate, transfer, and falsify</h2>
         <p>
-          RSQ never forms the full Jacobian. It uses Jacobian-vector and
-          vector-Jacobian products to approximate \(A=J^{\mathsf T}\) by
-          \(QB\), adding orthonormal blocks until a randomized residual estimate
-          meets a requested tolerance or the algebraic rank ceiling is reached.
-          The stopping status is recorded. Optimization then proceeds through
-          \(\theta=\theta_0+Qz\), with \(z\) carrying only the retained active
-          coordinates.
+          Independent training weights estimate \(L\). Matrix-free actions
+          approximate \(A=J^{\mathsf T}L\) by \(QB\); no evaluation weight enters
+          construction. Full and reduced SPSA receive the same 40-step schedule.
+          Setup, refresh, residual checks, scalar objectives, vector observables,
+          physical shots and simulator-only VJPs remain separate in the ledger.
         </p>
       </div>
 
       <ol class="method-grid">
         <li>
           <span class="step-number">01</span>
-          <h3>Probe</h3>
-          <p>Apply matrix-free sensitivity actions to discover observable directions without materializing \(J\).</p>
+          <h3>Train</h3>
+          <p>Estimate the task second moment from a training-only weight bank and build its local tangent representation.</p>
         </li>
         <li>
           <span class="step-number">02</span>
-          <h3>Compress</h3>
-          <p>Factor the local map into an orthonormal parameter basis \(Q\) and optimize only its coordinates.</p>
+          <h3>Transfer</h3>
+          <p>Optimize a disjoint evaluation trajectory in the retained coordinates with a matched full-space SPSA control.</p>
         </li>
         <li>
           <span class="step-number">03</span>
-          <h3>Refresh</h3>
-          <p>Recheck the residual, recycle useful directions, and recompress when the local row space drifts.</p>
+          <h3>Audit</h3>
+          <p>Compare gated, per-task, fixed, random-refresh and random-basis controls and count every resource category.</p>
         </li>
       </ol>
 
       <div class="theorem-panel">
         <div>
-          <p class="eyebrow">Conditional local statement</p>
-          <h3>What the true residual controls</h3>
+          <p class="eyebrow">Exact local statement</p>
+          <h3>What the task-weighted representation optimizes</h3>
         </div>
         <p>
-          The row space is local and can rotate during optimization. RSQ therefore
-          rechecks the residual every 25 steps. A failed check triggers a recycled
-          update that augments the old basis with current residual directions and
-          recompresses the combined space. If the true residual obeys
-          \(\|J(I-QQ^{\mathsf T})\|_2\leq\varepsilon\), then
+          For a fixed anchor and rank \(r\), the leading singular subspace solves
           \[
-            \bigl|C(\theta+\Delta)-C(\theta+QQ^{\mathsf T}\Delta)\bigr|
-            \leq \|w\|\,\varepsilon\,\|\Delta\|+L_C\|\Delta\|^2.
+            \min_{\operatorname{rank}(Q)=r}
+            \mathbb E_w\|(I-QQ^{\mathsf T})\nabla C_w(\theta)\|_2^2.
           \]
-          The true residual controls local first-order sensitivity; its finite-probe
-          estimate is a refresh diagnostic, not a global optimality certificate.
-          The public result records every residual check and refresh, the rank
-          trajectory, final and best-observed iterates, and separated operator counts.
+          The proof is a trace identity followed by the Eckart–Young–Mirsky
+          theorem. It selects a representation; it does not establish that a
+          reduced optimizer reaches the same solution or uses fewer resources.
         </p>
       </div>
     </section>
@@ -253,45 +246,40 @@
     <section class="section section-shell fade-in" id="boundaries" aria-labelledby="boundaries-title">
       <div class="section-index" aria-hidden="true">04 / Boundaries</div>
       <div class="section-heading">
-        <p class="eyebrow">What the interfaces and probes establish</p>
-        <h2 id="boundaries-title">Forward-only access and an explicit confidence boundary</h2>
+        <p class="eyebrow">Physical accounting boundary</p>
+        <h2 id="boundaries-title">Reuse measurements only where physics permits</h2>
       </div>
 
       <div class="boundary-grid">
         <article>
-          <p class="card-tag">Forward-only path</p>
-          <h3>No vector-Jacobian products</h3>
+          <p class="card-tag">Commuting observables</p>
+          <h3>One batch, many weights—at one circuit point</h3>
           <p>
-            A distinct fixed-rank path removes every vector-Jacobian product,
-            including those used during refresh. Central finite differences supply
-            directional actions,
+            Every MaxCut edge observable is diagonal in the computational basis.
+            One bitstring batch estimates the complete edge vector and any number
+            of scalarizations:
             \[
-              Jv=\frac{F(\theta_0+hv)-F(\theta_0-hv)}{2h}+O(h^2),
+              \widehat C_{w_k}=w_k^{\mathsf T}\widehat F_B.
             \]
-            Gaussian probes estimate average discarded sensitivity, and a
-            two-evaluation simultaneous-perturbation estimate updates the reduced
-            objective. A regression test enforces zero reverse products throughout
-            basis construction, refresh, and optimization. The released results
-            establish feasibility, not parity with two-sided RSQ.
+            This saves repeated measurement only when the circuit parameters are
+            identical. Once task optimizers follow different trajectories, their
+            batches cannot be merged.
           </p>
         </article>
 
         <article>
-          <p class="card-tag">Finite-probe envelope</p>
-          <h3>A diagnostic, not a global certificate</h3>
+          <p class="card-tag">Break-even identity</p>
+          <h3>Arithmetic is not matched-quality evidence</h3>
           <p>
-            For \(s\) Gaussian probes and failure probability \(\delta\), let
-            \(t=2/\sqrt{s\delta}\). When \(t&lt;1\), the true Frobenius residual
-            ratio lies between
+            If full and rank-\(r\) coordinate finite differences use \(2d\) and
+            \(2r\) circuit points per step, respectively, then reduced execution
+            is cheaper across \(K\) tasks only when
             \[
-              \sqrt{\frac{1-t}{1+t}}\,\widehat\rho_F
-              \quad\text{and}\quad
-              \sqrt{\frac{1+t}{1-t}}\,\widehat\rho_F
+              K>\frac{C_{\mathrm{basis}}}{2S(d-r)}.
             \]
-            with probability at least \(1-\delta\) under the exact linear-operator
-            model. At the released \(s=12\) and 95% confidence, this elementary
-            envelope is non-informative. The observed ratio is therefore a drift
-            diagnostic; the local loss theorem remains conditional on the true residual.
+            This does not apply to SPSA, whose update uses two objective calls in
+            either space. Equal shots also need not imply equal gradient precision
+            or matched solution quality.
           </p>
         </article>
       </div>
@@ -300,27 +288,99 @@
     <section class="section section-shell fade-in" id="results" aria-labelledby="results-title">
       <div class="section-index" aria-hidden="true">05 / Evidence</div>
       <div class="section-heading">
-        <p class="eyebrow">Released CPU benchmark</p>
-        <h2 id="results-title">Compression, quality, and measured operator cost</h2>
+        <p class="eyebrow">Released repeated-task development audit</p>
+        <h2 id="results-title">The representation is valid; the operational gate fails</h2>
         <p>
-          The released CPU study contains 36 paired MaxCut runs on 14 unique
-          topologies (28 topology-depth clusters) across three graph families,
-          \(n\in\{8,10\}\), depths \(p\in\{1,2\}\), and three restart identifiers.
-          Full, fixed-rank, two-sided, and forward-only methods share the same
-          initial angle vector; the symmetry baseline starts at its orbit-wise
-          projection. Graph, initialization, and sketch seeds are separate, and
-          every row stores a canonical edge list and graph hash. Step budgets are
-          matched, and operator costs are counted.
+          Eight graph topologies at \(n\in\{8,10\}\) and
+          \(p\in\{1,2\}\) yield 16 configured exact-statevector cells. Each cell
+          uses independent eight-weight training and evaluation trajectories.
+          Full and reduced methods share the same 40-step SPSA schedule; the
+          analysis reports descriptive paired summaries and does not treat the
+          reused depth cells as independent graph samples.
         </p>
       </div>
 
       <aside class="evidence-note" aria-label="Evidence provenance">
         <strong>Trace every value.</strong>
         <span>The cards below summarize the committed artifact. Audit the
-          <a href="experiments/results/maxcut_small.csv">row-level CSV</a>,
-          <a href="experiments/results/summary.json">machine-readable summary</a>, and
+          <a href="experiments/results/amortized_development.csv">exact row-level CSV</a>,
+          <a href="experiments/results/amortized_development_summary.json">machine-readable summary</a>, and
           <a href="paper/main.pdf">paper protocol</a> together.</span>
       </aside>
+
+      <div class="result-stack">
+        <article class="result-block">
+          <div class="result-copy">
+            <p class="card-tag">Exact matched audit</p>
+            <h3>Residual-gated reuse misses the quality condition</h3>
+            <p>
+              Full SPSA attains mean approximation ratio
+              \(0.8244\pm0.0230\); residual-gated reuse attains
+              \(0.8087\pm0.0237\). The paired change is
+              \(-1.57\pm1.04\) percentage points. Per-task refresh is closer at
+              \(-1.08\pm0.94\) points, but neither is a fresh confirmatory
+              equivalence result.
+            </p>
+          </div>
+          <figure class="result-figure">
+            <img src="paper/figures/figure_amortized_exact_audit.png"
+                 width="2209" height="1609" loading="lazy" decoding="async"
+                 alt="Exact repeated-task quality, cost, and dimension audit" />
+            <figcaption>Paired quality differences, disjoint resource categories, retained dimension, and refresh counts.</figcaption>
+          </figure>
+        </article>
+
+        <article class="result-block reverse">
+          <div class="result-copy">
+            <p class="card-tag">Physical boundary</p>
+            <h3>Compression does not reduce SPSA calls</h3>
+            <p>
+              Gated reuse averages 789.25 forward circuit points versus 648 for
+              full SPSA, a \(1.218\times\) cost ratio, and uses an additional
+              138.88 simulator-only VJPs. It triggers on 89.3% of task
+              transitions. A learned-basis advantage over a random basis is not
+              refresh- or construction-cost matched and cannot establish an
+              operational advantage.
+            </p>
+          </div>
+          <figure class="result-figure">
+            <img src="paper/figures/figure_amortized_stream.png"
+                 width="2285" height="919" loading="lazy" decoding="async"
+                 alt="Repeated-task quality trajectories and refresh rates" />
+            <figcaption>Warm-started task trajectories and the high refresh rate of the residual gate.</figcaption>
+          </figure>
+        </article>
+
+        <article class="result-block">
+          <div class="result-copy">
+            <p class="card-tag">Hybrid 256-shot pilot</p>
+            <h3>A directionally positive mean remains unresolved</h3>
+            <p>
+              On eight \(p=2\) graph topologies, gated reuse changes quality by
+              \(-0.33\pm1.67\) points and per-task refresh by
+              \(+0.61\pm1.57\) points. Only scalar-objective calls use shots;
+              construction and final scoring remain exact and simulator-assisted.
+              These results are not hardware evidence.
+            </p>
+          </div>
+          <figure class="result-figure">
+            <img src="paper/figures/figure_amortized_shot_audit.png"
+                 width="2209" height="889" loading="lazy" decoding="async"
+                 alt="Hybrid finite-shot repeated-task quality and resource audit" />
+            <figcaption>Nested shot repeats, paired quality summaries, scalar-objective shots, and unconverted simulator VJPs.</figcaption>
+          </figure>
+        </article>
+      </div>
+
+      <div class="section-heading">
+        <p class="eyebrow">Earlier fixed-objective development evidence</p>
+        <h2>Retained for provenance, not used as the primary result</h2>
+        <p>
+          The following benchmark predates the repeated-task formulation. It is
+          retained because its row-level records remain part of the public
+          evidence chain; its parameter-compression values do not imply savings.
+        </p>
+      </div>
 
       <div class="result-stack">
         <article class="result-block">
@@ -430,9 +490,11 @@
           The repository root is the single installable source for the
           <code>rsqaoa</code> project. The distribution contains the
           statevector simulator, backend-neutral sensitivity adapter, randomized
-          factorization, optimizers, baselines, and console command. Experiment
-          scripts, released results, paper sources, and generated figures remain
-          checkout-only research artifacts rather than hidden wheel payloads.
+          factorization, repeated-task optimizers, shared-bitstring scalarization,
+          physical resource accounting, baselines, and console command. Experiment
+          scripts, released results, design-only confirmatory plan, paper sources,
+          and generated figures remain checkout-only research artifacts rather
+          than hidden wheel payloads.
         </p>
       </div>
 
@@ -455,13 +517,15 @@ rsqaoa-experiment --family ring --n 4 --p 1 --steps 1 --json</code></pre>
 cd Randomized-Subspace-QAOA
 python -m pip install -e ".[dev]"
 python -m pytest tests -q
-python run.py experiment --config experiments/configs/maxcut_small.yaml
-python run.py summarize
+python experiments/analyze_amortized.py
+python experiments/make_amortized_paper_assets.py
+python experiments/validate_nmi_design.py
 python run.py validate</code></pre>
           <div class="artifact-links">
             <a href="https://github.com/thmolena/Randomized-Subspace-QAOA/tree/main/rsqaoa" target="_blank" rel="noopener noreferrer">Package source</a>
             <a href="experiments/results/maxcut_small.csv">Released rows</a>
             <a href="experiments/results/summary.json">Result summary</a>
+            <a href="experiments/configs/nmi_confirmatory_design.yaml">Confirmatory design</a>
             <a href="#bibtex">BibTeX citation</a>
           </div>
         </div>
@@ -478,8 +542,8 @@ python run.py validate</code></pre>
         <button class="copy-button" id="copyBibtex" type="button"
                 aria-controls="bibtexCode" aria-describedby="copyStatus">Copy BibTeX</button>
         <pre><code id="bibtexCode">@article{huynh2026rsqaoa,
-  title  = {Randomized Subspace QAOA: Residual-Controlled
-            Active-Subspace Optimization for Multi-Angle QAOA},
+  title  = {Task-distribution-weighted observable tangent spaces
+            for repeated multi-angle QAOA: A matched resource audit},
   author = {Huynh, Molena},
   year   = {2026}
 }</code></pre>
@@ -489,7 +553,7 @@ python run.py validate</code></pre>
   </main>
 
   <footer class="footer">
-    <p>Randomized Subspace QAOA · research software and reproducibility artifact</p>
+    <p>Task-weighted observable tangent spaces · research software and reproducibility artifact</p>
     <div>
       <a href="https://github.com/thmolena/Randomized-Subspace-QAOA" target="_blank" rel="noopener noreferrer">GitHub</a>
       <a href="paper/main.pdf">Paper</a>

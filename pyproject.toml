@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "rsqaoa"
 version = "0.3.0"
-description = "Randomized Subspace QAOA: adaptive matrix-free subspace optimization with a forward-only mode for multi-angle QAOA."
+description = "Task-weighted observable tangent spaces and physical resource accounting for repeated multi-angle QAOA."
 readme = "README.md"
 requires-python = ">=3.9"
 license = "MIT"
@@ -49,6 +49,7 @@ release = ["build>=1.2,<2", "twine>=5,<7"]
 
 [project.scripts]
 rsqaoa-experiment = "rsqaoa._cli:main"
+rsqaoa-reproduce = "rsqaoa.reproduce:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
