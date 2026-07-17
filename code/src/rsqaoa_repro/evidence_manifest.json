@@ -273,7 +273,7 @@
       "size": 807
     },
     "paper/tables/amortized_asset_manifest.json": {
-      "sha256": "1c000eac220aaae54273350f8e99e134816e20368fe18a57846b8baf424098c3",
+      "sha256": "0b4dce1e60ea7cb3638a965727a305e591a31b76af72e16371acbc650ff5f90d",
       "size": 3678
     },
     "paper/tables/table1_summary.tex": {
@@ -297,10 +297,10 @@
       "size": 235
     },
     "paper/tables/table_reproduction.tex": {
-      "sha256": "f4848ec7c30ef6edb00fb2c43ad4f757c9b91281344da01c7e0c0b5118b2a9b5",
+      "sha256": "ea7a8af00abf4aa81c96c8cd18402fbc0c0c73ec5d27f3e9ee91ad7ecad4fe18",
       "size": 725
     }
   },
-  "manifest_sha256": "e9581e1bd200a505768c96aeb55f6c57825dad2666248f6bd7b8d1e2fd92a6b8",
+  "manifest_sha256": "7a7605ad6cfaedf5f33de2c4a468c9440fa42b0090de06b0eee22f181d7d8400",
   "schema_version": 1
 }

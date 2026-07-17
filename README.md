@@ -86,10 +86,9 @@ python -m twine check dist/*
 The distribution and import names are both `rsqaoa`. The repository does not
 claim that a Python Package Index release exists: bare `pip install rsqaoa`
 becomes valid only after a separately authenticated package-index publication.
-The wheel contains the library and `rsqaoa-experiment` command. The paper,
-released rows, and full experiment grid remain repository artifacts rather than
-wheel contents; they are included in the source distribution for an archived
-reproduction bundle.
+The wheel contains the library, the `rsqaoa-experiment`, `rsqaoa-reproduce`,
+and `rsqaoa-reproduce-all` commands, and the hash-verified evidence bundle used
+by replay mode. The manuscript source and PDF remain repository artifacts.
 
 ## Quickstart
 

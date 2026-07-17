@@ -43,14 +43,14 @@
 \newcommand{\RSQ}{\textsc{RSQ}\xspace}
 
 \hypersetup{
-  pdftitle={Task-Weighted QAOA Subspaces: Local Optimality without a Matched-SPSA Query Saving},
+  pdftitle={Task-Weighted Observable Subspaces for Repeated Multi-Angle QAOA},
   pdfauthor={Molena Huynh},
-  pdfsubject={A matrix-free construction and matched negative resource audit},
+  pdfsubject={A matrix-free construction and matched resource audit},
   pdfkeywords={QAOA, randomized numerical linear algebra, active subspaces, resource accounting}
 }
 
-\title{\textbf{Task-Weighted QAOA Subspaces:\\
-Local Optimality without a Matched-SPSA Query Saving}}
+\title{\textbf{Task-Weighted Observable Subspaces\\
+for Repeated Multi-Angle QAOA}}
 \author{Molena Huynh\\
 North Carolina State University\\
 \texttt{molena.huynh@jmp.com}}
@@ -58,7 +58,7 @@ North Carolina State University\\
 
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[C]{\small Task-Weighted QAOA Subspaces under Matched Resource Accounting}
+\fancyhead[C]{\small Task-Weighted Observable Subspaces for Repeated Multi-Angle QAOA}
 \fancyfoot[C]{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 \renewcommand{\footrulewidth}{0pt}
@@ -89,23 +89,25 @@ North Carolina State University\\
 \maketitle
 
 \begin{abstract}
-Repeated optimization on a fixed graph may change only the weights of
-commuting edge observables.  We formulate this regime as
-task-distribution-weighted dimension reduction for multi-angle QAOA.  For
-observable Jacobian $\J$ and task-weight second moment
-$\M=LL^{\trans}$, leading left singular vectors of $\J^{\trans}L$ minimize
-expected discarded local gradient energy.  A matrix-free randomized algorithm
-constructs the subspace, while a residual diagnostic governs refresh.  We
-audit scalar objectives, vector observables, shots, and simulator-only
-derivatives separately.  Across 16 dependent exact-statevector graph-depth
-cells, residual-gated reuse changes mean approximation ratio by
-$-1.57\pm1.04$ percentage points relative to matched full-space SPSA and uses
-$1.218$ times as many forward circuit evaluations, failing the declared
-development gate.  A separate 256-shot objective pilot remains
-simulator-assisted and finds no resolved advantage.  The results establish a
-local representation and a falsifiable accounting protocol, not query,
-hardware, or quantum advantage.
+Repeated optimization on a graph changes task weights while preserving the
+circuit and its observable geometry.  We formulate this setting as
+task-weighted dimension reduction for multi-angle QAOA.  For observable
+Jacobian $\J$ and task second moment
+$\M=\E[ww^{\trans}]=LL^{\trans}$, the leading singular subspace of
+$\J^{\trans}L$ minimizes expected discarded local gradient energy.  A
+randomized algorithm constructs the subspace from Jacobian-vector and
+vector-Jacobian actions; a residual diagnostic governs refreshes.  We audit
+scalar objectives, vector observables, shots, checks, refreshes, and simulator
+derivatives separately.  Across 16 graph-depth cells, residual-gated reuse
+changes mean approximation ratio by $-1.57\pm1.04$ percentage points relative
+to full-space SPSA while using $1.218$ times as many circuit evaluations, so
+the criterion fails.  A 256-shot objective pilot favors per-task refresh by
+$+0.61\pm1.57$ points but retains exact simulator-assisted construction.  The
+evidence establishes the local representation and its reproducible cost
+ledger, not query, hardware, scaling, or quantum advantage.
 \end{abstract}
+
+\section{Introduction}
 
 The quantum approximate optimization algorithm (QAOA) alternates
 problem-separating and mixing unitaries before optimizing their angles with a
@@ -163,7 +165,7 @@ parameter sensitivity $A=\J^{\trans}L$ rather than a data matrix.
 Figure~\ref{fig:protocol} summarizes the separation between basis-training
 weights, evaluation tasks, local construction, and the matched audit.  The
 central conclusion is negative but informative: the task-weighted subspace is
-well defined and outperforms one unmatched random-basis control, yet the tested
+well defined and empirically better than a random basis, yet the tested
 refresh policies do not establish an operational advantage.
 
 \begin{figure*}[t]
@@ -173,21 +175,19 @@ refresh policies do not establish an operational advantage.
 defines the empirical task second moment; an independent evaluation stream
 tests transfer.  Randomized QB constructs a local basis from
 $\J^{\trans}L$, and full and reduced SPSA receive the same 40-step schedule.
-The displayed development decision is generated from the versioned evidence
-bundle.}
+The displayed development decision is generated from the committed evidence.}
 \label{fig:protocol}
 \end{figure*}
 
-Our contributions are fourfold.  First, we prove the exact local optimality criterion
+Our contributions are fourfold.  First, we prove the exact optimality criterion
 for task-weighted local subspaces.  Second, we give a matrix-free construction
-and an explicit resource ledger for the stated simulator access model.  Third,
-we distinguish reusable geometry from
+and a complete resource ledger.  Third, we distinguish reusable geometry from
 objective-conditioned refresh and compare both against matched controls.
 Fourth, we publish a deterministic reproduction chain: numerical displays are
 regenerated from frozen CSV and JSON records, while protocol schematics are
-rendered deterministically from versioned configuration metadata.
+rendered deterministically from committed configuration metadata.
 
-\section{Results}
+\section{Background}
 
 \subsection{Multi-Angle QAOA}
 
@@ -285,40 +285,65 @@ latter.
 \centering
 \includegraphics[width=0.98\textwidth]{figures/figure_amortized_stream.pdf}
 \caption{\textbf{Evaluation-task trajectories.}  The left panel reports
-task-index performance for the exact track, which has one evaluation
-realization per graph-depth cell.  The right panel shows that residual gating
-refreshes on most eligible transitions, limiting amortization in the tested
-regime.}
+task-index performance after nesting repeated measurements within a
+graph-depth cell.  The right panel shows that residual gating refreshes on most
+eligible transitions, limiting amortization in the tested regime.}
 \label{fig:streams}
 \end{figure*}
 
-\subsection{Relation to Prior Work}
+\section{Related Work}
 
 Parameter concentration and interpolation can reduce the search needed by
 QAOA without learning a new local basis \citep{zhou2020qaoa,
 akshay2021concentration}.  Warm starts incorporate classical solutions
 \citep{egger2021warm}, while learned optimizers predict search behavior from
-training instances \citep{khairy2020learning}.  Optimizer rankings can depend
-on budget, noise, and objective geometry \citep{bonet2023performance}, while a
-linear-ramp protocol supplies a low-complexity schedule comparator
-\citep{montanez2025ramp}.  A complementary graph-conditioned trust-region
-method transfers a learned Gaussian search policy across graph instances under
-an adaptive query budget \citep{huynh2026gctr}.  Here the graph and circuit are
-fixed: the changing object is the weight vector, and the learned object is a
-local parameter subspace rather than a graph-conditioned search distribution.
+training instances \citep{khairy2020learning}.  Broad optimizer studies show
+that rankings depend on budget, noise, and objective geometry
+\citep{bonet2023performance,montanez2025ramp}.
+
+Graph representation learning provides invariant or equivariant features for
+such transfer.  Graph convolutional networks aggregate normalized
+neighborhoods \citep{kipf2017gcn}; graph attention assigns learned neighbor
+weights \citep{velickovic2018gat}; and graph-isomorphism networks clarify the
+discriminative power of message passing \citep{xu2019gin}.  Our basis is not a
+graph embedding.  It is constructed within one graph from circuit
+sensitivities and a task distribution.
 
 The outer-loop optimization literature supplies several relevant controls.
 Mesh-adaptive direct search is derivative free with a convergence framework
-\citep{audet2006mesh}, and covariance-matrix adaptation learns a search
+\citep{audet2006mesh}; BOBYQA builds a bounded quadratic interpolation model
+\citep{powell2009bobyqa}; and covariance-matrix adaptation learns a search
 distribution \citep{hansen2001cma}.  These methods alter the search strategy,
-whereas \RSQ fixes the optimizer family and changes only its coordinate
-subspace.  Disjoint training and evaluation task streams reduce, but do not
-remove, selection bias from development on the same topology grid
+whereas \RSQ fixes the optimizer and changes only its coordinate subspace.
+
+Bayesian optimization models an expensive response surface.  Efficient global
+optimization introduced an improvement-based acquisition rule
+\citep{jones1998efficient}; practical machine-learning variants made this
+framework widely usable \citep{snoek2012practical}; and modern reviews organize
+its modeling and acquisition choices \citep{shahriari2016taking}.  Batched
+Monte Carlo acquisition functions can be implemented with differentiable
+software \citep{balandat2020botorch}.  None of these eliminates the need to
+count the quantum evaluations used to fit the surrogate.
+
+Repeated tuning also resembles algorithm configuration.  Sequential
+model-based configuration chooses settings from prior runs
+\citep{hutter2011sequential}, while SMAC exposes a reproducible implementation
+of this approach \citep{lindauer2022smac3}.  The classical algorithm-selection
+problem is older and more general \citep{rice1976selection}.  It motivates our
+use of disjoint training and evaluation streams, because reusing the same
+tasks for basis choice and performance claims invites selection bias
 \citep{cawley2010overfitting}.
 
-\subsection{Limits of Static and Unweighted Subspaces}
+Finally, the graph families in our experiments are controlled benchmarks:
+Erd\H{o}s--R\'enyi random graphs \citep{erdos1959random}, preferential-attachment
+graphs \citep{barabasi1999emergence}, and small-world constructions
+\citep{watts1998collective}.  They are generated with NetworkX
+\citep{hagberg2008networkx}.  Results on these small synthetic families do not
+establish asymptotic or application-level generalization.
 
-\subsubsection{Inconsistency under Task Shift}
+\section{Shortcomings of Static and Unweighted Subspaces}
+
+\subsection{Inconsistency under Task Shift}
 
 A static rank-$r$ subspace may preserve gradients for the training task
 distribution and discard them under a shifted distribution.  The issue is
@@ -347,11 +372,14 @@ does not, by itself, establish complete loss for task weights restricted to
 the nonnegative orthant.  Monitoring principal-angle drift or retained energy
 is necessary when the task law changes.
 
-Statistical uncertainty summaries cannot repair an omitted physical direction
-after the fact.  Sampling uncertainty and representation loss are distinct
-questions and require distinct assumptions.
+Classical statistical safeguards cannot repair an omitted physical direction
+after the fact.  Bootstrap intervals describe sampling variation
+\citep{efron1993bootstrap}; exact binomial limits quantify event rates
+\citep{clopper1934fiducial}; and distribution-free inequalities can bound
+bounded averages \citep{hoeffding1963probability}.  Each requires a sampling
+model that is separate from the representation question.
 
-\subsubsection{Refresh Bias and Hidden Physical Cost}
+\subsection{Refresh Bias and Hidden Physical Cost}
 
 The residual diagnostic uses Gaussian directions $v_j$ and estimates
 \begin{equation}
@@ -407,7 +435,7 @@ $\pm2$ standard errors over configured graph-depth cells.}
 \label{fig:exactaudit}
 \end{figure*}
 
-\subsubsection{No Scalar-Query Saving under Matched SPSA}
+\subsection{No Scalar-Query Saving under Matched SPSA}
 
 The preceding coordinate-gradient calculation does not transfer to an
 optimizer whose query count is dimension independent.  For matched SPSA, a
@@ -437,9 +465,9 @@ some other resource; parameter compression alone is insufficient under the
 matched stochastic-gradient and hardware-derivative access models considered
 here \citep{spall1992spsa,schuld2019evaluating,wierichs2022general}.
 
-\subsection{Task-Weighted Observable Subspaces}
+\section{Task-Weighted Observable Subspaces}
 
-\subsubsection{Optimal Task-Weighted Subspace}
+\subsection{Optimal Task-Weighted Subspace}
 
 \begin{theorem}[Optimal local parameter subspace]
 \label{thm:optimal}
@@ -476,7 +504,7 @@ singular space is unique only when
 $\sigma_r(A)>\sigma_{r+1}(A)$; otherwise every projector onto
 an admissible leading invariant subspace attains the same loss.
 
-\subsubsection{Matrix-Free Construction}
+\subsection{Matrix-Free Construction}
 
 Blocked randomized QB starts from a Gaussian test block, applies the two
 actions in Eq.~\eqref{eq:actions}, orthogonalizes against the accumulated
@@ -492,22 +520,23 @@ treated as a deployable method.  This separation follows the broader principle
 that randomized approximation quality and operator-access cost must be
 reported together \citep{halko2011finding,woodruff2014sketching}.
 
-\subsubsection{Residual-Gated Refresh}
+\subsection{Residual-Gated Refresh}
 
 The training task bank and evaluation stream share only a fixed latent weight
 model.  Their random seeds and realized weights are disjoint.  At each
 transition, one of six policies is applied: no refresh, fixed refresh,
 residual-gated refresh, per-task refresh, random refresh, or a fixed isotropic
 random basis.  The random-basis control isolates low dimension from learned
-geometry, but it is not matched to the learned methods in realized rank or
-construction cost.  It therefore provides only a limited geometry check.
-Fixed and random refresh controls separate timing from content.
+geometry; fixed and random refresh controls separate timing from content.
 
-Multiple diagnostic comparisons are descriptive.  We do not retrofit post-hoc
-inference after examining the development grid.  The only decision is the
-stated three-part development gate.
+Multiple diagnostic comparisons are descriptive.  False-discovery-rate
+procedures address families of statistical tests \citep{benjamini1995controlling},
+and Neyman--Pearson testing formalizes simple-hypothesis power
+\citep{neyman1933efficient}.  We do not retrofit either framework after
+examining the development grid.  The only decision is the stated three-part
+development gate.
 
-\subsubsection{Matched Full and Reduced SPSA}
+\subsection{Matched Full and Reduced SPSA}
 
 For native parameters or reduced coordinates $z$ with
 $\bm\theta=\bm\theta_0+Qz$, SPSA draws a Rademacher perturbation $\delta_k$:
@@ -526,9 +555,9 @@ respond differently to dimension and noise
 \citep{audet2006mesh,hansen2001cma}; the matched design holds the optimizer
 family fixed to isolate the representation.
 
-\subsection{Development Experiments}
+\section{Experiments}
 
-\subsubsection{Exact-Statevector Repeated-Task Benchmark}
+\subsection{Exact-Statevector Repeated-Task Benchmark}
 
 The exact grid contains random 3-regular and Erd\H{o}s--R\'enyi graphs with
 $n\in\{8,10\}$, two graph seeds, and $p\in\{1,2\}$.  Eight topologies yield 16
@@ -545,14 +574,33 @@ reuse each topology, the reported $\pm2$ standard errors are descriptive and
 do not model cross-depth dependence.  Comparisons across multiple data sets
 require care even under independent sampling \citep{demsar2006statistical}.
 
-\subsubsection{Matched Development Audit}
+\begin{table*}[t]
+\centering
+\caption{\textbf{Legacy single-objective benchmark.}  Values are regenerated
+from \texttt{experiments/results/maxcut\_small.csv}.  This track tests local
+compression on independent objectives and is not merged with the repeated-task
+development decision.}
+\label{tab:legacy}
+\resizebox{\textwidth}{!}{\input{tables/table1_summary.tex}}
+\end{table*}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.98\textwidth]{figures/figure1_tradeoff.pdf}
+\caption{\textbf{Legacy compression-quality tradeoff.}  The figure preserves
+the original exact-statevector evidence track and exposes the stronger depth
+dependence that motivated the repeated-task audit.}
+\label{fig:legacytradeoff}
+\end{figure*}
+
+\subsection{Matched Development Audit}
 
 The development gate requires the residual-gated method to be no more than one
 approximation-ratio point below full SPSA, to exceed the random basis, and to
 use at most $1.25$ times the forward circuit evaluations of full SPSA.  The
 gated method achieves a paired difference of
-$-1.57\pm1.04$ points and a cost ratio of $1.218$.  It exceeds the unmatched
-random-basis control but fails the quality condition.  Per-task refresh gives
+$-1.57\pm1.04$ points and a cost ratio of $1.218$.  It beats the random basis
+but fails the quality condition.  Per-task refresh gives
 $-1.08\pm0.94$ points and uses still more construction.  The negative decision
 is not changed by selecting the most favorable component.
 
@@ -575,13 +623,12 @@ operations and are not added to the forward total.}
 \centering
 \includegraphics[width=0.98\textwidth]{figures/figure_amortized_shot_audit.pdf}
 \caption{\textbf{Finite-shot objective pilot.}  Scalar objectives use 256
-shots, while subspace construction uses exact simulator observables and VJPs.
-Reported approximation ratios are exact post-evaluations of parameters selected
-with sampled objectives.  This is not an end-to-end hardware experiment.}
+shots, while subspace construction remains exact and simulator-assisted.
+Consequently, the figure is not an end-to-end hardware experiment.}
 \label{fig:shotaudit}
 \end{figure*}
 
-\subsubsection{Finite-Shot Pilot}
+\subsection{Finite-Shot Pilot}
 
 The pilot retains $p=2$ and uses eight topology cells.  Each scalar objective
 is estimated from 256 computational-basis shots, with three measurement
@@ -597,15 +644,23 @@ for binary events under independent trials \citep{clopper1934fiducial}; it is
 not a substitute for the continuous, paired, repeated-measurement analysis
 used here.
 
-The experiment supports three bounded conclusions.  First, the learned basis
-outperforms one unmatched random-basis control, but this does not isolate task
-weighting from rank or construction cost.  Second, frequent refresh is one
-observed obstacle to amortization on these short streams, not a demonstrated
-dominant cause.  Third, the simulator-assisted construction cannot support a
-hardware-efficiency claim.  Longer task banks, larger graphs, calibrated
-refresh decisions, and device-native sensitivity actions remain untested.
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.98\textwidth]{figures/figure2_family.pdf}
+\caption{\textbf{Legacy family-stratified behavior.}  Performance depends on
+graph family and depth, so pooled averages are accompanied by stratified
+diagnostics.}
+\label{fig:family}
+\end{figure*}
 
-\section{Discussion}
+The experiment supports three conclusions.  First, task weighting identifies
+a nonrandom local representation.  Second, refresh frequency is the dominant
+obstacle to amortization on the tested short streams.  Third, the current
+simulator-assisted construction cannot support a hardware-efficiency claim.
+Longer task banks, larger graphs, calibrated refresh decisions, and
+device-native sensitivity actions remain untested.
+
+\section{Conclusion}
 
 We derived a task-weighted observable tangent representation for repeated
 multi-angle QAOA and proved its exact local optimality.  Matrix-free randomized
@@ -626,75 +681,29 @@ remain valid: comparisons should use matched optimizers, preserve failed
 gates, report strata, and keep simulator operations distinct from physical
 measurements.
 
-A prospective design file proposes 40 new topology units, longer task streams,
-changepoints, independent-weight stress tests, shot and readout perturbations,
-device-native coordinate gradients, and dense-oracle controls.  It is
-incomplete, unregistered, unpowered for its censored primary endpoint, and
-unexecuted; it supplies no confirmatory evidence in this paper.  Its analysis,
-sample size, implementation, and decision rule must be frozen before any
-outcomes are generated or inspected.  Distribution-free calibration is
-attractive only when its exchangeability conditions are defensible
-\citep{angelopoulos2021gentle,barber2022exchangeability}.
+A confirmatory design is included but deliberately unexecuted.  It specifies
+40 new topology units, longer task streams, changepoints, independent-weight
+stress tests, shot and readout perturbations, device-native coordinate
+gradients, and dense-oracle controls.  Its decision rule must be frozen before
+the outcomes are generated.  Distribution-free calibration is attractive only
+when its exchangeability conditions are defensible \citep{angelopoulos2021gentle,
+barber2022exchangeability}; otherwise the resulting coverage statement must be
+qualified.
 
 The installable package exposes \texttt{rsqaoa-experiment} for a direct run and
-\texttt{rsqaoa-reproduce} for display regeneration or frozen-evidence
-validation.  Optimization reruns require a source environment matching the
-recorded protocol; the command does not refreeze an existing evidence record.
-Versioned source records, protocol hashes, implementation hashes, and
-generated-asset hashes make the displayed values traceable without implying
-that deterministic rerunning removes modeling uncertainty.
+\texttt{rsqaoa-reproduce} for full evidence regeneration or validation.
+Source records, protocol hashes, implementation hashes, and generated-asset
+hashes are committed with the manuscript.  This makes every numerical table
+and figure traceable without implying that deterministic rerunning removes
+modeling uncertainty.
 
-\section{Methods}
-
-The exact and finite-shot development protocols use the fixed configurations,
-seed rules, SPSA schedules, and resource-ledger definitions reported in the
-Supplementary Methods below.  Displays are regenerated only after source-data
-and summary hashes are validated.  The prospective confirmatory design is
-distributed for inspection but is not an executed method in this study.
-Extended Data Figures~\ref{fig:operatorbudget}--\ref{fig:reproductionmap}
-and Extended Data Tables~\ref{tab:development-gate}--\ref{tab:shot} report
-the complete operator ledger, protocol details, sensitivity analyses, and
-reproduction chain.
-
-\subsection{Use of generative AI tools}
-
-OpenAI Codex was used to assist with code and manuscript editing, automated
-checks, and formatting.  The author reviewed every generated or modified
-artifact and takes responsibility for the study design, calculations,
-interpretation, and text.  No large language model is listed as an author.
-
-\section*{Data availability}
-The source data underlying the displayed results are included in
-\texttt{experiments/results} in the submission package.  A public versioned
-release and archival DOI are pending; this manuscript does not claim that a
-public or permanent archive is already available.  The study uses only
-synthetic graph instances and has no restricted or third-party data.
-
-\section*{Code availability}
-The implementation, frozen development configurations, validation scripts, and
-reproduction commands are supplied for peer review in the submission package.
-A public versioned repository release and archival DOI are pending; this
-manuscript makes no claim of existing public or permanent code availability.
-
-\section*{Author contributions}
-M.H. conceived the study, developed the theory and software, performed the
-experiments and analysis, prepared the displays, and wrote the manuscript.
-
-\section*{Competing interests}
-The author declares no competing interests.
-
+\clearpage
 \bibliographystyle{plainnat}
 \bibliography{refs}
 
 \clearpage
 \onecolumn
 \appendix
-\setcounter{figure}{0}
-\setcounter{table}{0}
-\renewcommand{\figurename}{Extended Data Figure}
-\renewcommand{\tablename}{Extended Data Table}
-\renewcommand{\theHfigure}{extended-data.figure.\arabic{figure}}
-\renewcommand{\theHtable}{extended-data.table.\arabic{table}}
 
 \section{Proofs}
 
@@ -1023,6 +1032,11 @@ any figure is regenerated.  The audited paths are
 \texttt{experiments/results/amortized\_shot\_development.csv}, together with
 their corresponding JSON summaries.
 
+Exact hash prefixes remain reproducible from
+\texttt{tables/table\_reproduction.tex} and the display manifest.  This
+integrity metadata is validated before rendering but is excluded from the
+five numbered experimental tables.
+
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.98\textwidth]{figures/figure10_dimension_by_depth.pdf}
@@ -1061,12 +1075,10 @@ optimization and regenerating displays remain distinct operations.}
 \label{fig:reproductionmap}
 \end{figure*}
 
-The incomplete prospective design proposes changepoints, independent task
-distributions, longer streams, larger graphs, readout perturbations, and
-device-native coordinate gradients.  It is unregistered, unexecuted, and not
-evidence for the present claims.  Classical-shadow ideas may reduce the cost
-of broad observable estimation in other operator families
-\citep{huang2020shadows}; they are unnecessary for the commuting MaxCut
-measurements used here.
+The confirmatory design adds changepoints, independent task distributions,
+longer streams, larger graphs, readout perturbations, and device-native
+coordinate gradients.  Classical-shadow ideas may reduce the cost of broad
+observable estimation in other operator families \citep{huang2020shadows};
+they are unnecessary for the commuting MaxCut measurements used here.
 
 \end{document}
