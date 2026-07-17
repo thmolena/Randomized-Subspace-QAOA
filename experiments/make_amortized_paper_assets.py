@@ -32,7 +32,6 @@ EXACT_CSV = RESULTS / "amortized_development.csv"
 EXACT_JSON = RESULTS / "amortized_development_summary.json"
 SHOT_CSV = RESULTS / "amortized_shot_development.csv"
 SHOT_JSON = RESULTS / "amortized_shot_development_summary.json"
-LEGACY_JSON = RESULTS / "summary.json"
 
 DISPLAY = {
     "full_spsa": "Full SPSA",
@@ -423,146 +422,6 @@ def figure_streams(rows: list[dict[str, str]]) -> None:
     _save(fig, "figure_amortized_stream")
 
 
-def figure_refresh_frequency(summary: dict) -> None:
-    methods = [
-        "amortized_none", "amortized_fixed", "amortized_gated",
-        "amortized_per_task", "amortized_random", "amortized_random_basis",
-    ]
-    values = [
-        summary["aggregate"][method]["refreshes"]["mean"] for method in methods
-    ]
-    fig, ax = plt.subplots(figsize=(7.25, 2.75), constrained_layout=True)
-    x = np.arange(len(methods))
-    ax.bar(x, values, color=[COLORS[method] for method in methods])
-    ax.axhline(7, color="#333333", lw=0.9, ls="--",
-               label="all seven transitions")
-    ax.set_xticks(x, [DISPLAY[method] for method in methods],
-                  rotation=24, ha="right")
-    ax.set_ylabel("Mean refreshes per eight-task stream")
-    ax.set_title("Refresh policies spend markedly different construction budgets",
-                 loc="left")
-    ax.grid(axis="y")
-    ax.legend(frameon=False)
-    _save(fig, "figure9_refresh_frequency")
-
-
-def figure_dimension_by_depth(legacy: dict) -> None:
-    methods = [
-        ("full_maqaoa", "none", "Full ma-QAOA", "#303030"),
-        ("symmetry", "none", "Symmetry tied", "#4C78A8"),
-        ("rsq", "0.01", "RSQ, tol. 0.01", "#D1495B"),
-        ("rsq", "0.1", "RSQ, tol. 0.1", "#2A9D8F"),
-        ("rsq_adjoint_free", "none", "Forward only", "#F4A261"),
-    ]
-    fig, ax = plt.subplots(figsize=(7.25, 2.85), constrained_layout=True)
-    x = np.arange(2)
-    width = 0.15
-    for index, (method, tol, label, color) in enumerate(methods):
-        values = [
-            legacy[f"p{depth}:{method}:{tol}"]["parameters_mean"]
-            for depth in (1, 2)
-        ]
-        ax.bar(x + (index - 2) * width, values, width,
-               color=color, label=label)
-    ax.set_xticks(x, ["Depth 1", "Depth 2"])
-    ax.set_ylabel("Mean optimized parameter dimension")
-    ax.set_title("Compression grows with circuit depth on the legacy grid",
-                 loc="left")
-    ax.grid(axis="y")
-    ax.legend(frameon=False, ncol=3)
-    _save(fig, "figure10_dimension_by_depth")
-
-
-def figure_quality_cost_frontier(summary: dict) -> None:
-    methods = [
-        "full_spsa", "amortized_none", "amortized_fixed",
-        "amortized_gated", "amortized_per_task", "amortized_random",
-        "amortized_random_basis",
-    ]
-    fig, ax = plt.subplots(figsize=(7.25, 3.2), constrained_layout=True)
-    for method in methods:
-        aggregate = summary["aggregate"][method]
-        x = aggregate["forward_circuit_evaluations"]["mean"]
-        y = aggregate["mean_ratio"]["mean"]
-        ax.scatter(x, y, s=58, color=COLORS[method], label=DISPLAY[method],
-                   zorder=3)
-        ax.annotate(DISPLAY[method], (x, y), xytext=(4, 3),
-                    textcoords="offset points", fontsize=7)
-    ax.set_xlabel("Mean forward circuit evaluations per task stream")
-    ax.set_ylabel("Mean approximation ratio")
-    ax.set_title("No reduced method dominates full SPSA in quality and cost",
-                 loc="left")
-    ax.grid()
-    _save(fig, "figure11_quality_cost_frontier")
-
-
-def figure_family_effects(rows: list[dict[str, str]]) -> None:
-    methods = ["amortized_gated", "amortized_per_task", "amortized_random_basis"]
-    families = sorted({row["family"] for row in rows})
-    unit_means: dict[tuple, list[float]] = defaultdict(list)
-    for row in rows:
-        unit_means[(_topology_key(row), row["method"])].append(
-            float(row["approximation_ratio"])
-        )
-    full = {
-        unit: mean(values)
-        for (unit, method), values in unit_means.items()
-        if method == "full_spsa"
-    }
-    fig, ax = plt.subplots(figsize=(7.25, 3.0), constrained_layout=True)
-    x = np.arange(len(families))
-    width = 0.24
-    for index, method in enumerate(methods):
-        values = []
-        errors = []
-        for family in families:
-            deltas = [
-                100 * (mean(values_) - full[unit])
-                for (unit, candidate), values_ in unit_means.items()
-                if candidate == method and unit[0] == family
-            ]
-            values.append(mean(deltas))
-            errors.append(_two_se(deltas))
-        ax.bar(x + (index - 1) * width, values, width, yerr=errors,
-               capsize=3, color=COLORS[method], label=DISPLAY[method])
-    ax.axhline(0, color="#333333", lw=0.9)
-    ax.set_xticks(x, [family.replace("_", " ").title() for family in families])
-    ax.set_ylabel("Paired difference from full SPSA (points; +/-2 s.e.)")
-    ax.set_title("Method differences are heterogeneous across graph families",
-                 loc="left")
-    ax.grid(axis="y")
-    ax.legend(frameon=False, ncol=3)
-    _save(fig, "figure12_family_effects")
-
-
-def figure_reproducibility_map() -> None:
-    fig, ax = plt.subplots(figsize=(7.25, 2.9), constrained_layout=True)
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-    ax.axis("off")
-    stages = [
-        (0.02, "Frozen YAML\nand seeds", "#E8EEF7"),
-        (0.22, "Deterministic\nexperiment runner", "#DCEAF7"),
-        (0.42, "Row-level CSV\nand JSON ledgers", "#E2F2ED"),
-        (0.62, "Nested analysis\nand paired audit", "#FFF1D6"),
-        (0.82, "Figures, tables,\nand hash manifest", "#F9E2E5"),
-    ]
-    for x, text, color in stages:
-        _box(ax, (x, 0.38), 0.16, 0.24, text, face=color, fontsize=7.2)
-    arrow = dict(arrowstyle="-|>", lw=1.2, color="#4B4B4B",
-                 mutation_scale=10)
-    for left, right in zip(stages, stages[1:]):
-        ax.annotate("", xy=(right[0], 0.50), xytext=(left[0] + 0.16, 0.50),
-                    arrowprops=arrow)
-    ax.text(0.02, 0.82, "Reproduction chain and integrity boundaries",
-            fontsize=10, fontweight="bold")
-    ax.text(0.02, 0.13,
-            "Rerunning optimization is distinct from regenerating displays; "
-            "both paths are exposed by the repository command.",
-            fontsize=7.4, color="#555555")
-    _save(fig, "figure13_reproducibility_map")
-
-
 def _fmt(value: float, digits: int = 2) -> str:
     return f"{value:.{digits}f}"
 
@@ -643,7 +502,6 @@ def main() -> None:
     shot_rows = _load_rows(SHOT_CSV)
     exact = _load_json(EXACT_JSON)
     shot = _load_json(SHOT_JSON)
-    legacy = _load_json(LEGACY_JSON)
     if len(exact_rows) != exact["n_rows"] or len(shot_rows) != shot["n_rows"]:
         raise RuntimeError("CSV and JSON row counts disagree")
     for rows, summary, name in (
@@ -658,11 +516,6 @@ def main() -> None:
     figure_exact(exact)
     figure_shot(shot)
     figure_streams(exact_rows)
-    figure_refresh_frequency(exact)
-    figure_dimension_by_depth(legacy)
-    figure_quality_cost_frontier(exact)
-    figure_family_effects(exact_rows)
-    figure_reproducibility_map()
     table_exact(exact)
     table_shot(shot)
 
@@ -671,9 +524,6 @@ def main() -> None:
         for stem in (
             "figure_amortized_protocol", "figure_amortized_exact_audit",
             "figure_amortized_shot_audit", "figure_amortized_stream",
-            "figure9_refresh_frequency", "figure10_dimension_by_depth",
-            "figure11_quality_cost_frontier", "figure12_family_effects",
-            "figure13_reproducibility_map",
         )
         for suffix in ("pdf", "png")
     ] + [
