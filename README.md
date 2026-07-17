@@ -18,7 +18,7 @@ The result is presently a falsified operational hypothesis, not an efficiency
 claim. Across 16 exact-statevector topology-depth cells from eight graphs,
 residual-gated reuse changes mean approximation ratio by `-1.57 +/- 1.04`
 percentage points and uses `1.218x` the forward circuit points of full SPSA.
-It therefore fails the prespecified development gate. In a separate hybrid
+It therefore fails the declared development criterion. In a separate hybrid
 256-shot objective pilot, per-task refresh changes the mean by
 `+0.61 +/- 1.57` points, but subspace construction still uses exact simulator
 observables and VJPs. Neither result supports hardware, query, wall-time, or
@@ -28,16 +28,25 @@ quantum advantage.
 - [Project page](https://thmolena.github.io/Randomized-Subspace-QAOA/)
 - [Installable package](rsqaoa/) · [Exact rows](experiments/results/amortized_development.csv) · [Hybrid shot rows](experiments/results/amortized_shot_development.csv)
 
+The two development protocols retain their complete 19-file frozen source
+closure under `experiments/protocol/frozen_source/`. The present checkout adds
+later physical-accounting code and is therefore intentionally not
+byte-compatible with those historical executions. Validation audits the
+preserved bytes, protocol hashes, rows, and summaries; an incompatible
+`rsqaoa-reproduce --rerun` aborts before writing rather than silently
+refreezing the record. The standalone package's `replay` command verifies the
+historical evidence, while `full` creates a separately frozen seeded run.
+
 ## Claims and verification paths
 
 | Supported statement | Evidence | Reproduction path | Boundary |
 | --- | --- | --- | --- |
-| The leading subspace of `J^T L` is locally optimal for a declared task second moment | Trace identity and Eckart-Young-Ky Fan argument | `paper/main.tex`, Theorem 1; `test_task_weighted_basis_matches_dense_reference` | Local; no optimizer convergence claim |
+| The leading subspace of `J^T L` is locally optimal for a declared task second moment | Trace identity and Eckart-Young-Ky Fan argument | Task-weighted optimality theorem in `paper/main.tex`; `test_task_weighted_qb_matches_dense_operator` | Local; no optimizer convergence claim |
 | Training and evaluation weights are disjoint | Independent recorded seeds and hashes | Frozen protocols and every result row | Same synthetic weight model is shared |
 | Residual-gated reuse fails the exact development gate | Matched full/reduced SPSA over 16 configured cells | [`amortized_development_summary.json`](experiments/results/amortized_development_summary.json) | Development data; eight unique topologies |
 | The finite-shot signal is unresolved and hybrid | Three nested measurement repeats on eight graphs | [`amortized_shot_development_summary.json`](experiments/results/amortized_shot_development_summary.json) | Basis construction and final scoring remain exact |
 | One bitstring batch can evaluate all task weights at one circuit point | Shared-observable covariance identity and tested API | `shared_task_objectives`; `test_physical_accounting.py` | Cannot merge task-specific parameter trajectories |
-| A fresh confirmatory decision is specified before execution | Design-only 40-topology plan and validator | `python experiments/validate_nmi_design.py` | Not registered, not code-complete, and not executable |
+| A prospective confirmatory design is specified before execution | Design-only 40-topology plan and validator | `python experiments/validate_nmi_design.py` | Not registered, not code-complete, and not executable |
 
 ### Earlier fixed-objective benchmark
 
@@ -79,7 +88,8 @@ claim that a Python Package Index release exists: bare `pip install rsqaoa`
 becomes valid only after a separately authenticated package-index publication.
 The wheel contains the library and `rsqaoa-experiment` command. The paper,
 released rows, and full experiment grid remain repository artifacts rather than
-wheel contents.
+wheel contents; they are included in the source distribution for an archived
+reproduction bundle.
 
 ## Quickstart
 

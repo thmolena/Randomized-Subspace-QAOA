@@ -495,6 +495,95 @@ def table_shot(summary: dict) -> None:
     )
 
 
+def table_development_gate(summary: dict) -> None:
+    gate = summary["thesis_gate"]
+    rows = [
+        (
+            "Quality versus full SPSA",
+            r"$\geq -0.010$",
+            f"{gate['quality_delta_vs_full']:+.5f}",
+            gate["quality_delta_vs_full"] >= -0.01,
+        ),
+        (
+            "Quality versus random basis",
+            r"$>0$",
+            f"{gate['quality_delta_vs_random_basis']:+.5f}",
+            gate["quality_delta_vs_random_basis"] > 0.0,
+        ),
+        (
+            "Forward-cost ratio versus full",
+            r"$\leq 1.25$",
+            f"{gate['forward_cost_ratio_vs_full']:.5f}",
+            gate["forward_cost_ratio_vs_full"] <= 1.25,
+        ),
+        (
+            "Conjunctive development gate",
+            "all pass",
+            "observed",
+            gate["survives_first_pilot"],
+        ),
+    ]
+    lines = [
+        r"\begin{tabular}{@{}lrrc@{}}",
+        r"\toprule",
+        r"Criterion & Required & Observed & Result \\",
+        r"\midrule",
+    ]
+    for label, required, observed, passed in rows:
+        result = "pass" if passed else r"\textbf{fail}"
+        lines.append(
+            f"{label} & {required} & {observed} & {result} \\\\"
+        )
+    lines.extend([r"\bottomrule", r"\end{tabular}"])
+    (TABLES / "table_development_gate.tex").write_text(
+        "\n".join(lines) + "\n"
+    )
+
+
+def table_protocol(exact: dict, shot: dict) -> None:
+    lines = [
+        r"\begin{tabular}{lrrrrl}",
+        r"\toprule",
+        r"Track & Topologies & Depths & Tasks & Repeats & Evaluator \\",
+        r"\midrule",
+        (
+            f"Exact development & {exact['n_sampling_units'] // 2} & 2 & "
+            f"{exact['n_tasks_per_unit']} & 1 & exact statevector \\\\"
+        ),
+        (
+            f"Finite-shot pilot & {shot['n_sampling_units']} & 1 & "
+            f"{shot['n_tasks_per_unit']} & "
+            f"{shot['measurement_repeats_per_method_unit'][0]} & 256 shots \\\\"
+        ),
+        r"\bottomrule",
+        r"\end{tabular}",
+    ]
+    (TABLES / "table_protocol.tex").write_text("\n".join(lines) + "\n")
+
+
+def table_reproduction() -> None:
+    sources = [
+        ("Legacy results", RESULTS / "maxcut_small.csv"),
+        ("Exact task streams", EXACT_CSV),
+        ("Shot task streams", SHOT_CSV),
+        ("Legacy summary", LEGACY_JSON),
+        ("Exact summary", EXACT_JSON),
+        ("Shot summary", SHOT_JSON),
+    ]
+    lines = [
+        r"\begin{tabular}{lll}",
+        r"\toprule",
+        r"Artifact & Repository path & SHA-256 prefix \\",
+        r"\midrule",
+    ]
+    for label, path in sources:
+        relative = path.relative_to(REPOSITORY).as_posix().replace("_", r"\_")
+        lines.append(f"{label} & \\texttt{{{relative}}} & "
+                     f"\\texttt{{{_sha256(path)[:12]}}} \\\\")
+    lines.extend([r"\bottomrule", r"\end{tabular}"])
+    (TABLES / "table_reproduction.tex").write_text("\n".join(lines) + "\n")
+
+
 def main() -> None:
     FIGURES.mkdir(parents=True, exist_ok=True)
     TABLES.mkdir(parents=True, exist_ok=True)
@@ -518,6 +607,9 @@ def main() -> None:
     figure_streams(exact_rows)
     table_exact(exact)
     table_shot(shot)
+    table_development_gate(exact)
+    table_protocol(exact, shot)
+    table_reproduction()
 
     assets = [
         FIGURES / f"{stem}.{suffix}"
@@ -529,6 +621,9 @@ def main() -> None:
     ] + [
         TABLES / "table_amortized_exact_audit.tex",
         TABLES / "table_amortized_shot_audit.tex",
+        TABLES / "table_development_gate.tex",
+        TABLES / "table_protocol.tex",
+        TABLES / "table_reproduction.tex",
     ]
     manifest = {
         "schema": 1,
