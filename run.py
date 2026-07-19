@@ -68,6 +68,45 @@ def _validate_bundle_sync() -> None:
     print(f"[bundle-sync] {checked} evidence/source files are byte-identical")
 
 
+def _sync_release_outputs() -> None:
+    """Mirror only validated, reproducible outputs into the installed bundle."""
+    bundle = ROOT / "code/src/rsqaoa_repro/bundle"
+    relative_paths = (
+        Path("experiments/results/summary.json"),
+        Path("paper/figures"),
+        Path("paper/tables"),
+        Path("paper/legacy_evidence_claims.tex"),
+        Path("paper/main.bbl"),
+        Path("paper/main.pdf"),
+        Path("paper/arxiv-source-rsq.zip"),
+    )
+    copied = 0
+    for relative in relative_paths:
+        source = ROOT / relative
+        if source.is_dir():
+            for item in sorted(source.rglob("*")):
+                if not item.is_file() or item.name == ".DS_Store":
+                    continue
+                destination = bundle / item.relative_to(ROOT)
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(item, destination)
+                copied += 1
+        elif source.is_file():
+            destination = bundle / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, destination)
+            copied += 1
+        else:
+            raise RuntimeError(f"missing validated release output: {relative}")
+    print(f"[bundle-sync] mirrored {copied} validated release outputs")
+
+
+def _remove_build_intermediates() -> None:
+    """Remove successful-build files that do not belong in a public release."""
+    for suffix in (".aux", ".blg", ".log", ".out"):
+        (ROOT / "paper/main").with_suffix(suffix).unlink(missing_ok=True)
+
+
 def _compile_and_test_archive() -> None:
     tectonic = shutil.which("tectonic")
     if tectonic is None:
@@ -118,6 +157,9 @@ def _release() -> None:
     _checked([sys.executable, "experiments/validate_nmi_design.py"])
     _checked([sys.executable, "experiments/validate_release.py"])
     _checked([sys.executable, "code/tools/check_source_sync.py"])
+    _compile_and_test_archive()
+    _sync_release_outputs()
+    _checked([sys.executable, "code/tools/build_evidence_manifest.py"])
     _validate_bundle_sync()
     package_environment = dict(os.environ)
     package_environment["PYTHONPATH"] = str(ROOT / "code/src")
@@ -135,7 +177,7 @@ def _release() -> None:
         env=package_environment,
         check=True,
     )
-    _compile_and_test_archive()
+    _remove_build_intermediates()
     print("[release] RSQ evidence, manuscript, package mirror, and archive passed")
 
 
