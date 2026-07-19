@@ -289,8 +289,8 @@
       "size": 47280
     },
     "paper/main.tex": {
-      "sha256": "4e807af7af37033ba390ae883d066d7a67a6eacea2ae9de7a3c82b26e48945ff",
-      "size": 52600
+      "sha256": "486ce7d2fd9f21607b74e13b8a76ccd199e49368c7bbf4eb176b625b71971433",
+      "size": 52713
     },
     "paper/prx-popular-summary.tex": {
       "sha256": "feda3724ce6b5d0c0c5299c59ba0860ae9f823356bd5734e27ca81bd724bb8e6",
@@ -329,6 +329,6 @@
       "size": 725
     }
   },
-  "manifest_sha256": "287260e48ab7c94ed7325583137dbe363aa377dad0e312bd9cb39c12f11dac9f",
+  "manifest_sha256": "06eb56f6644b5d82064ad9d1696f58e7789caac7ffba83775fec00a66c27ef45",
   "schema_version": 1
 }
