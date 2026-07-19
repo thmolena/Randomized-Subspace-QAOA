@@ -39,6 +39,8 @@ optimization, summarization, or plotting:
 rsqaoa-reproduce-all replay
 python tools/check_source_sync.py
 python -m pytest
+rsqaoa-experiment --help
+rsqaoa-experiment --family ring --n 6 --p 1 --steps 10 --json
 ```
 
 Materialize an exact byte-for-byte copy at the original repository-relative
@@ -85,6 +87,33 @@ Replay and rerun are intentionally distinct:
 The confirmatory design reports `execution_ready: false`; the command validates
 that status and does not fabricate an unregistered confirmatory experiment.
 
+## Complete manuscript release gate
+
+From the repository root, one command recomputes every feasible summary,
+regenerates all 13 figures and five numbered tables, validates evidence and
+source synchronization, builds the REVTeX manuscript and deterministic source
+archive, and recompiles the extracted archive:
+
+```bash
+python run.py release
+```
+
+The command fails immediately if a locked evidence byte, packaged mirror,
+reported value, manuscript input, citation, or archive member has drifted.
+
+## Python API
+
+The public API is importable independently of the command line:
+
+```python
+from rsqaoa import MaxCutProblem, optimize_rsq
+
+problem = MaxCutProblem(n=6, edges=[(0, 1), (1, 2), (2, 3),
+                                   (3, 4), (4, 5), (0, 5)], p=1)
+result = optimize_rsq(problem, steps=10, maxrank=4, seed=7)
+print(result.best_cut, result.best_theta)
+```
+
 ## Build and wheel-install checks
 
 ```bash
@@ -94,7 +123,7 @@ python -m venv /tmp/rsqaoa-wheel-venv
 source /tmp/rsqaoa-wheel-venv/bin/activate
 python -m pip install dist/rsqaoa-0.3.0-py3-none-any.whl
 rsqaoa-reproduce-all replay
-rsqaoa-experiment --family ring --n 4 --p 1 --steps 2 --json
+rsqaoa-experiment --family ring --n 6 --p 1 --steps 10 --json
 ```
 
 The canonical implementation remains the repository-root `rsqaoa/` directory.

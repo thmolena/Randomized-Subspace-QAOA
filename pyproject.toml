@@ -30,6 +30,7 @@ dependencies = [
     "numpy>=1.23,<3",
     "torch>=2.0,<3",
     "networkx>=2.8,<4",
+    "pyyaml>=6.0,<7",
 ]
 
 [project.urls]
@@ -43,7 +44,7 @@ Paper = "https://thmolena.github.io/Randomized-Subspace-QAOA/paper/main.pdf"
 pennylane = ["pennylane>=0.35,<1", "pennylane-lightning>=0.35,<1"]
 dev = [
     "pytest>=7.0,<9", "pytest-cov>=4.0,<8",
-    "pyyaml>=6.0,<7", "matplotlib>=3.6,<4",
+    "matplotlib>=3.6,<4",
 ]
 release = ["build>=1.2,<2", "twine>=5,<7"]
 

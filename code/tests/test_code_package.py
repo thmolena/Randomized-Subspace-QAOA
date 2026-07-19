@@ -31,7 +31,7 @@ def test_replay_validates_all_committed_evidence() -> None:
     assert report["legacy_rows"] == 216
     assert report["amortized"]["amortized_development"]["rows"] == 896
     assert report["amortized"]["amortized_shot_development"]["rows"] == 576
-    assert report["files"] == 75
+    assert report["files"] == 82
     assert report["asset_files"] == 23
     assert report["confirmatory_design_status"] == (
         "design_only_incomplete_unregistered"

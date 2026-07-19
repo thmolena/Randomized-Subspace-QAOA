@@ -24,14 +24,14 @@
     ]
   },
   "generated_artifact_sha256": {
-    "paper/figures/figure1_tradeoff.pdf": "2b22e8414717bb0e7a508da21846d39f0343e4a78ef67b1b3fea7e8799b0dcf4",
-    "paper/figures/figure1_tradeoff.png": "979cd412735ec68eda660e3efe0a548866abc9a53d7f8ba9300edad2d2e42ab7",
-    "paper/figures/figure2_family.pdf": "497e91db389d7d6aa732431839f0a861e6cd3d49f67a4dddd7974abfbc17c96f",
-    "paper/figures/figure2_family.png": "2b4840af45148c32e30cbd70f65b6112f517622615cf5a88b243190426700c57",
-    "paper/figures/figure3_operator_budget.pdf": "175db8e0f8361b4428f877408a9f0ff5151cf45d1d4d7e78c9eb45ef556cecfc",
-    "paper/figures/figure3_operator_budget.png": "ea801bcebb058dff8df7b53f6d6783eb05f2b26330cbac534fd1a999ef0dde4d",
-    "paper/figures/figure4_rank.pdf": "7b3ee22b78ef90060cd98de2c9060d0c4bd44410c0c1f2203482fa7838ec5704",
-    "paper/figures/figure4_rank.png": "48237e0c8b117f9888e9432e3a0017262df6f0b42229bb14f81e646d0b6084a5",
+    "paper/figures/figure1_tradeoff.pdf": "8181e43cb1c6c63b29bb969a28439cd17e5974e4fa58b1718326b12fe5c2a3e4",
+    "paper/figures/figure1_tradeoff.png": "3b5d4009c5791d834e6ae1c91cec12109a81738e0ed9ea591da0aa78327ed6a2",
+    "paper/figures/figure2_family.pdf": "483a4a52473ebee915fb0b48d0db40f8d16785d600d1a795dd9113a018133fc6",
+    "paper/figures/figure2_family.png": "aa56430007baf529eeb82018869b4e81f79a6a467e2cbdb9e6b358ef8182a6de",
+    "paper/figures/figure3_operator_budget.pdf": "b7fe1a54d19a2278fd2915027ca264e4258895e4a1eb5fbc19638f208810d29e",
+    "paper/figures/figure3_operator_budget.png": "a0e300de8430b9da250edc9f47e8b9fe6e0c05bdd03b2fd1b31b42cee5f0d9de",
+    "paper/figures/figure4_rank.pdf": "85bf7b3bf880735a6fe38919dc272b4943e0259fd03f8f5229d6b546238925ae",
+    "paper/figures/figure4_rank.png": "01f90a4bb4b53009f552e3ea8fd05d636d42b0e0e8938037bc87d351f7af0d3b",
     "paper/legacy_evidence_claims.tex": "d0d14201718751fefab0a3d95eb0376a142b4b14fe4686e3cff3525dd76b8272",
     "paper/tables/table1_summary.tex": "c03c83c87db8fdb9790d4b6e2d71f0aa4e05faf81c0083dda8cdea7979a84b03"
   },
@@ -305,10 +305,10 @@
   "source_csv": "maxcut_small.csv",
   "source_csv_sha256": "3fc6bef1a65a76de6d1188b3731b4ee951a6fc043d7306d2a0e238fe82c3d475",
   "summarizer_environment": {
-    "matplotlib_version": "3.11.0",
+    "matplotlib_version": "3.11.1",
     "numpy_version": "2.5.1",
-    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
-    "python_version": "3.13.12"
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "python_version": "3.12.13"
   },
   "summarizer_sha256": "64b62dacdce7f7379383166b0fc58d1f636411527cc86fd4ac83e0e24702d0c1",
   "uncertainty_convention": {
